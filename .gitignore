@@ -9,3 +9,5 @@ frontend/node_modules/
 dist/
 frontend/dist/
 .vercel/
+package-lock.json
+frontend/package-lock.json

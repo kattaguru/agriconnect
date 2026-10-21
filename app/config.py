@@ -1,10 +1,13 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
 
-_BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(_BASE_DIR / ".env")
-load_dotenv()  # fallback to cwd if any
+    _BASE_DIR = Path(__file__).resolve().parent.parent
+    load_dotenv(_BASE_DIR / ".env")
+    load_dotenv()  # fallback to cwd if any
+except ImportError:
+    pass
 
 
 def _default_db_url() -> str:

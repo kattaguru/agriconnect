@@ -4,12 +4,27 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from . import models  # noqa: F401  (registers tables on Base.metadata)
-from .config import settings
-from .database import Base, SessionLocal, engine, get_db
-from .routers import (admin, auth, bookings, farms, intelligence, jobs,
-                      notifications, reviews, simulations, workers)
-from .seed import seed_demo_data
+import sys
+from pathlib import Path
+
+# Support running as a standalone entrypoint (Vercel) or as a package
+if not __package__:
+    _parent = Path(__file__).resolve().parent.parent
+    if str(_parent) not in sys.path:
+        sys.path.insert(0, str(_parent))
+    from app import models  # noqa: F401
+    from app.config import settings
+    from app.database import Base, SessionLocal, engine, get_db
+    from app.routers import (admin, auth, bookings, farms, intelligence, jobs,
+                              notifications, reviews, simulations, workers)
+    from app.seed import seed_demo_data
+else:
+    from . import models  # noqa: F401  (registers tables on Base.metadata)
+    from .config import settings
+    from .database import Base, SessionLocal, engine, get_db
+    from .routers import (admin, auth, bookings, farms, intelligence, jobs,
+                          notifications, reviews, simulations, workers)
+    from .seed import seed_demo_data
 
 
 @asynccontextmanager

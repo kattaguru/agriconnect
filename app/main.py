@@ -43,6 +43,8 @@ for r in (auth, farms, jobs, bookings, reviews, workers, simulations, notificati
 
 
 @app.get("/health", tags=["meta"])
+@app.get("/api", tags=["meta"])
+@app.get("/api/health", tags=["meta"])
 def health():
     return {"status": "ok", "app": "AgriConnect", "version": "1.0.0"}
 

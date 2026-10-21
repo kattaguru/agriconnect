@@ -7,8 +7,14 @@ load_dotenv(_BASE_DIR / ".env")
 load_dotenv()  # fallback to cwd if any
 
 
+def _default_db_url() -> str:
+    if os.getenv("VERCEL"):
+        return "sqlite:////tmp/agriconnect.db"
+    return "sqlite:///./agriconnect.db"
+
+
 class Settings:
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./agriconnect.db")
+    database_url: str = os.getenv("DATABASE_URL") or _default_db_url()
     jwt_secret: str = os.getenv("JWT_SECRET", "dev-only-secret-change-me-dev-only-secret-change-me")
     jwt_expiry_minutes: int = int(os.getenv("JWT_EXPIRY_MINUTES", "720"))
     cors_origins: list[str] = os.getenv(

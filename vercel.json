@@ -5,7 +5,10 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.py": {
-      "includeFiles": "app/**,frontend/dist/**"
+      "includeFiles": [
+        "app/**",
+        "frontend/dist/**"
+      ]
     }
   },
   "rewrites": [

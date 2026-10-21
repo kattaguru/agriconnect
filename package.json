@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "AI-Powered Agricultural Workforce & Farm Intelligence Platform",
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "build": "npm run build --prefix frontend",
-    "install:frontend": "npm install --prefix frontend"
+    "build": "cd frontend && npm install && npm run build"
   }
 }

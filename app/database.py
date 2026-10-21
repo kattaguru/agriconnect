@@ -3,7 +3,12 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from .config import settings
 
-raw_url = settings.database_url
+import re
+
+raw_url = (settings.database_url or "").strip().strip('"\'')
+# Remove pgbouncer=true query parameter (used by Prisma, causes error in psycopg2)
+raw_url = re.sub(r'[?&]pgbouncer=true', '', raw_url)
+
 if raw_url.startswith("postgres://"):
     raw_url = raw_url.replace("postgres://", "postgresql+psycopg2://", 1)
 elif raw_url.startswith("postgresql://"):

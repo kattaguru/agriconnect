@@ -1,0 +1,482 @@
+AGRICONNECT
+AI-Powered Agricultural Workforce & Farm Intelligence Platform
+Technical Design Document
+Architecture, data model, API, algorithms, security, AI components, DevOps and testing
+Field	Value
+Document	AgriConnect - Technical Design Document
+Version	1.0 (baseline: MVP slice 1 implemented)
+Date	19 October 2026
+Author	Katta Guravaiah  (Roll No. 23KB1A0597)
+Department / college	[add department and college name]
+Project guide	[add guide name]
+Status legend	IMPLEMENTED = built and tested. PLANNED = designed, not yet built.
+Companion documents	Software Requirements & Development Specification; Project Master Document
+
+B.Tech Final-Year Project  |  Technical Design Document (TDD)
+Contents
+1. Introduction
+2. System Overview
+3. Architecture
+4. Backend Design
+5. Data Design
+6. API Design
+7. Domain Logic and Algorithms
+8. Security Design
+9. AI / ML Components and Profit Simulator (Planned)
+10. Frontend Design (Planned)
+11. Infrastructure and DevOps
+12. Testing Design
+13. Observability and Operations
+14. Performance and Scalability
+15. Known Limitations and Technical Debt
+Appendix A: Environment Variables
+Appendix B: Example Requests
+Appendix C: Glossary
+1. Introduction
+1.1 Purpose
+This document describes how AgriConnect is designed and built. It is the reference for developers, examiners and future contributors: it explains the architecture, the database, every API endpoint, the core algorithms, the security model and the plan for the AI components.
+1.2 Scope
+AgriConnect is a cloud-based platform with two primary user groups, farmers and agricultural workers. Phase 1 is a job marketplace. Later phases add a farmer profit simulator, crop intelligence, crop-disease detection, retrieval-augmented generation (RAG), a tool-using AI agent and market intelligence. This TDD covers both what exists today and what is designed for later, and marks each clearly.
+1.3 Implementation status at a glance
+Area	Status	Evidence
+Authentication, roles, JWT	IMPLEMENTED	Register/login, bcrypt, HS256 tokens, role checks (tests pass)
+Farms, jobs, applications, bookings, reviews	IMPLEMENTED	Full farmer-to-worker flow covered by an end-to-end test
+Rule-based worker matching	IMPLEMENTED	Weighted score with explanations; 4 unit tests
+Nearby-job search	IMPLEMENTED	Haversine distance filter, sorted by distance
+Docker / PostgreSQL configuration	IMPLEMENTED	Dockerfile and docker-compose.yml provided
+Alembic migrations, notifications, admin	PLANNED	Section 15
+React frontend, offline PWA, voice, local language	PLANNED	Section 10
+Crop intelligence, disease ML, RAG, agent, market data, profit simulator	PLANNED	Section 9
+Azure deployment, CI/CD, monitoring	PLANNED	Section 11
+
+Verified: The current backend passes 9 automated tests (pytest), and the live server was smoke-tested (health check, registration, Swagger UI, and 401 for missing tokens). The author also ran the server locally and registered a farmer through Swagger UI.
+2. System Overview
+2.1 Problem and goals
+Farmers struggle to find reliable workers at the right time, and workers struggle to find nearby farm work with clear wages and dates. AgriConnect connects the two sides, builds a portable reputation for workers, and later adds evidence-grounded decision support for farmers.
+2.2 Design principles
+•	Marketplace first. The labour marketplace must work end to end before any AI feature is added.
+•	Simple before clever. A transparent rule-based matcher is the baseline; ML must beat it to earn a place.
+•	Grounded AI. RAG answers cite sources; the agent only calls controlled tools; consequential actions need human confirmation.
+•	Modular monolith. One deployable application with clean module boundaries; extract services only when a real need appears.
+•	Security and testing from day one. Authorisation is enforced server-side on every protected route and is covered by tests.
+•	Honest uncertainty. Predictions, forecasts and simulations are decision support, never guarantees.
+2.3 Constraints and assumptions
+•	Single developer, one academic year; scope must stay demonstrable and testable.
+•	Cloud budget limited to student credits; expensive services stay off when idle.
+•	Users may have low bandwidth and low digital literacy; mobile-first, lightweight screens.
+•	Coordinates are supplied by the client (GPS or manual); no paid map service is required for the MVP.
+•	Training data for disease detection comes from public datasets; real labour-matching data does not exist yet.
+2.4 Key design decision: Python / FastAPI backend
+The original blueprint proposed Java 21 with Spring Boot. During implementation the backend was changed to Python 3.12 with FastAPI. The reasons: the ML, RAG and agent components are Python-native, so one language avoids a second service and glue code; FastAPI provides validation and OpenAPI docs automatically; and the code could be built and tested in the available environment. The architecture (modular monolith, REST, JWT, PostgreSQL, Docker, Azure) is unchanged. See the decision log in the Project Master Document.
+3. Architecture
+3.1 Architectural style
+A modular monolith exposing a REST/JSON API. Modules share one database and one deployable, but each has its own router, and business rules are kept out of route handlers where they grow complex. ML and RAG capabilities are added as internal modules first and may later be split into a separate Python service if scaling or dependency weight demands it.
+3.2 Logical architecture
+                     React web app (PLANNED)  /  Swagger UI (today)
+                                   |  HTTPS + JWT
+                                   v
++------------------------------ FastAPI application ---------------------------+
+|  CORS -> routing -> auth dependency (JWT) -> role dependency -> validation    |
+|                                                                               |
+|  auth    farms    jobs (+applications)    bookings    reviews    workers      |
+|                         |                                                     |
+|                      matching (score + explanations)                          |
+|                                                                               |
+|  profit-sim  crop-intel  disease-ML  RAG  agent  market  notifications        |
+|  (all PLANNED)                                                                |
++-------------------------------------|-----------------------------------------+
+                                      v
+                     SQLAlchemy 2 ORM  ->  SQLite (dev) / PostgreSQL (prod)
+                                      |
+             Blob storage (images, docs)  |  Vector index (pgvector)  |  Cache (Redis)   [PLANNED]
+3.3 Components
+Component	Responsibility	Location	Status
+Auth	Register, login, password hashing, JWT issue/verify, role guard	app/security.py, routers/auth.py	IMPLEMENTED
+Farms	Farmer-owned farms with location, area, soil notes	routers/farms.py	IMPLEMENTED
+Jobs and applications	Post jobs, discover nearby, apply, accept	routers/jobs.py	IMPLEMENTED
+Bookings	Confirmed assignments and completion	routers/bookings.py	IMPLEMENTED
+Reviews	Two-way ratings after completed work	routers/reviews.py	IMPLEMENTED
+Workers	Skills, experience, location, availability, reputation	routers/workers.py	IMPLEMENTED
+Matching	Weighted ranking of workers with explanations	app/matching.py	IMPLEMENTED
+Geo helper	Haversine distance	app/geo.py	IMPLEMENTED
+Profit simulator	Crop profitability and selling-option comparison	to be added	PLANNED
+Notifications	In-app, WhatsApp/SMS alerts	to be added	PLANNED
+ML / RAG / Agent / Market	See Section 9	to be added	PLANNED
+
+3.4 Technology choices
+Layer	Choice	Why
+Language / framework	Python 3.12, FastAPI	Fast to build, typed validation, auto docs, same language as ML/RAG
+Data validation	Pydantic v2	Request/response schemas double as documentation
+ORM	SQLAlchemy 2.x	Mature, works with SQLite and PostgreSQL
+Database	SQLite (dev), PostgreSQL 16 (prod)	Zero setup locally; relational integrity in production
+Auth	PyJWT (HS256), bcrypt	Stateless tokens; slow salted password hashing
+Server	Uvicorn	ASGI server
+Tests	pytest, FastAPI TestClient	In-memory database per test
+Containers	Docker, docker-compose	Reproducible local and cloud runs
+Frontend (planned)	React + TypeScript, PWA	Mobile-first, offline-capable
+ML (planned)	PyTorch / scikit-learn	Transfer learning for images; ranking models
+RAG (planned)	pgvector + embeddings + LLM	One database for relational and vector data
+Cloud (planned)	Azure Container Apps, PostgreSQL, Blob Storage, Monitor	Matches available student credits
+
+4. Backend Design
+4.1 Code layout
+agriconnect-api/
+  app/
+    main.py          app factory, CORS, router registration, /health, table creation on startup
+    config.py        settings from environment variables
+    database.py      engine, session factory, get_db dependency
+    models.py        SQLAlchemy tables and status enums
+    schemas.py       Pydantic request/response models and mapper functions
+    security.py      password hashing, JWT, current_user, require_role
+    matching.py      score(), rank_workers(), avg_rating()
+    geo.py           distance_km() (Haversine)
+    routers/         auth, farms, jobs, bookings, reviews, workers
+  tests/             conftest.py, test_matching.py, test_flow.py
+  Dockerfile  docker-compose.yml  requirements.txt  README.md
+4.2 Request lifecycle
+1.	The request passes through CORS middleware.
+2.	FastAPI validates the path, query and JSON body against Pydantic schemas (invalid input returns 422).
+3.	current_user reads the Authorization: Bearer header, verifies the JWT and loads the user (missing or bad token returns 401).
+4.	require_role(...) checks the user role (wrong role returns 403).
+5.	The route handler checks ownership rules (for example, only the farm owner may view applications), performs the change and commits the transaction.
+6.	The result is mapped to an output schema and returned as JSON.
+4.3 Error handling
+HTTP code	Meaning	Examples
+200 / 201	Success / created	Apply, accept, complete; register, create farm, job, review
+401	Not authenticated	No token, invalid or expired token, wrong password
+403	Authenticated but not allowed	Worker posts a job; farmer opens another farmer's job; stranger reviews a booking
+404	Resource missing	Unknown job, farm, application, booking, worker
+409	State conflict	Duplicate email, duplicate application, job no longer open, review before completion, double review
+422	Validation failed	Weak password, invalid role, past start date, rating outside 1-5, bad coordinates
+
+4.4 Transactions and consistency
+Each request uses one database session. Multi-step changes commit together: accepting an application updates the application, creates the booking, and (when the job is full) changes the job status and rejects remaining pending applications in one transaction. Uniqueness is also enforced by database constraints (one application per worker per job, one review per reviewer per booking, unique email) so that races cannot create duplicates.
+5. Data Design
+5.1 Entity relationships
+users 1---0..1 worker_profiles                (only WORKER users have a profile)
+users 1---*    farms            (owner)
+farms 1---*    jobs
+jobs  1---*    job_applications *---1 users (worker)
+jobs  1---*    bookings         *---1 users (worker)
+bookings 1---* reviews          (max 2: one per participant)
+reviews *---1  users (reviewer),  *---1 users (reviewed)
+5.2 Implemented tables
+users
+Column	Type	Notes
+id	integer PK	
+name	varchar(120)	
+email	varchar(255)	unique, stored lowercase, indexed
+phone	varchar(30)	optional
+password_hash	varchar(255)	bcrypt
+role	varchar(20)	FARMER, WORKER (self-registration); AGRI_EXPERT, ADMIN reserved
+created_at	timestamp tz	
+
+worker_profiles
+Column	Type	Notes
+id	integer PK	
+user_id	FK users, unique	created automatically at worker registration
+skills	JSON list	for example ["harvesting","weeding"]
+experience_years	integer	default 0
+latitude / longitude	float, nullable	worker base location
+available	boolean	default true
+
+farms
+Column	Type	Notes
+id	integer PK	
+owner_id	FK users	indexed
+name	varchar(120)	
+area_acres	float	> 0
+latitude / longitude	float	validated to -90..90 and -180..180
+soil_info	varchar(500)	free text for now
+
+jobs
+Column	Type	Notes
+id	integer PK	
+farm_id	FK farms	indexed
+work_type	varchar(120)	for example Groundnut harvesting
+required_skill	varchar(80)	optional; compared case-insensitively
+workers_required	integer	>= 1
+start_date	date	not in the past
+duration_days	integer	>= 1
+wage_per_day	float	> 0
+status	varchar(20)	OPEN, FILLED, COMPLETED (CANCELLED reserved); indexed
+created_at	timestamp tz	
+
+job_applications, bookings, reviews
+Table	Key columns	Constraints
+job_applications	job_id, worker_id, status (PENDING/ACCEPTED/REJECTED), applied_at	UNIQUE(job_id, worker_id)
+bookings	job_id, worker_id, status (CONFIRMED/COMPLETED), created_at, completed_at	created only by accepting an application
+reviews	booking_id, reviewer_id, reviewed_id, rating (1-5), comment, created_at	UNIQUE(booking_id, reviewer_id)
+
+5.3 Planned tables
+Table	Purpose
+skills / worker_skills	Normalised skill catalogue with experience level (replaces the JSON list when needed)
+notifications	Per-user events: new matching job, application received/accepted, reminders
+profit_simulations	Saved simulator inputs and results per farm, for later comparison
+soil_records, crops	Farm soil tests and crop cycles for crop intelligence
+crop_images	Uploaded images, storage URL, model prediction, confidence, status
+market_prices	Crop, market, location, price, date, source
+documents, document_chunks	RAG knowledge base with source metadata and vector embeddings
+ai_conversations	Assistant messages, retrieved sources, tool calls
+audit_logs	User, action, resource, timestamp for sensitive operations
+
+5.4 Schema management
+Tables are currently created with Base.metadata.create_all() on startup, which is acceptable for the MVP. Before any real deployment, Alembic migrations must replace it so schema changes are versioned and reversible.
+6. API Design
+6.1 Conventions
+•	Base path /api, JSON bodies, snake_case field names. Interactive documentation at /docs, machine-readable spec at /openapi.json.
+•	Authentication: Authorization: Bearer <token> on every route except register, login and health.
+•	IDs are integers. Timestamps are ISO-8601 with timezone. Dates are YYYY-MM-DD.
+•	Errors return {"detail": "..."} with the status codes in Section 4.3.
+6.2 Endpoint catalogue (all implemented)
+Method and path	Role	Purpose
+POST /api/auth/register	public	Create FARMER or WORKER account; returns token
+POST /api/auth/login	public	Email and password; returns token
+POST /api/farms	FARMER	Create a farm
+GET /api/farms/mine	FARMER	List own farms
+POST /api/jobs	FARMER	Post a job on an owned farm
+GET /api/jobs	any user	List open jobs
+GET /api/jobs/mine	FARMER	List own jobs
+GET /api/jobs/nearby?lat&lon&radius_km&skill	any user	Open jobs within a radius, nearest first, with distance_km
+GET /api/jobs/{id}	any user	Job details
+POST /api/jobs/{id}/apply	WORKER	Apply to an open job
+GET /api/jobs/{id}/applications	FARMER (owner)	Applicants for a job
+GET /api/jobs/{id}/matches	FARMER (owner)	Ranked workers with score and reasons
+POST /api/applications/{id}/accept	FARMER (owner)	Accept applicant; creates booking; may fill the job
+GET /api/bookings/mine	any user	Own bookings (farmer: on own jobs; worker: assigned)
+POST /api/bookings/{id}/complete	FARMER (owner)	Mark work complete; may complete the job
+POST /api/reviews	booking participant	Rate the other party after completion
+GET /api/workers/me, PUT /api/workers/me	WORKER	View or update own profile
+GET /api/workers/{user_id}	any user	Worker profile with average rating and review count
+GET /health	public	Liveness check
+
+6.3 Example: ranked matches
+GET /api/jobs/1/matches          (Authorization: Bearer <farmer token>)
+[
+  { "worker_id": 2, "name": "Suresh", "score": 0.876, "distance_km": 3.0,
+    "reasons": ["3.0 km from the farm", "has the required skill", "available",
+                "5 years experience", "no ratings yet"] },
+  { "worker_id": 3, "name": "Far Worker", "score": 0.26, "distance_km": 186.4, "reasons": ["..."] }
+]
+7. Domain Logic and Algorithms
+7.1 State machines
+Entity	States and transitions
+Job	OPEN -> FILLED (when accepted bookings >= workers_required) -> COMPLETED (when the last confirmed booking is completed). CANCELLED is reserved for a future cancel feature.
+Application	PENDING -> ACCEPTED (farmer accepts) or REJECTED (job filled by others). Terminal states cannot change.
+Booking	CONFIRMED -> COMPLETED (farmer confirms the work is done).
+
+7.2 Accepting an application
+1.	Load the application and its job; verify the caller owns the job's farm (else 403).
+2.	Require application status PENDING and job status OPEN (else 409).
+3.	Set application to ACCEPTED and create a CONFIRMED booking for that worker.
+4.	Count bookings for the job. If the count reaches workers_required, set the job to FILLED and set all remaining PENDING applications to REJECTED.
+5.	Commit once; return the booking.
+7.3 Completing work and reviews
+Only the owning farmer can complete a booking. When the job is FILLED and no CONFIRMED bookings remain, the job becomes COMPLETED. A review is allowed only after the booking is COMPLETED, only for the farmer or the assigned worker, and the reviewed party is always the other participant. A user can review a booking once.
+7.4 Rule-based matching engine
+The matcher ranks every worker profile for a job using a transparent weighted score in the range 0 to 1:
+score = 0.40 * distance_score
+      + 0.20 * availability      (1 if available else 0)
+      + 0.20 * skill_match       (1 if job needs no skill, or the worker lists it)
+      + 0.10 * experience_score  (min(years, 10) / 10)
+      + 0.10 * reputation_score  (avg_rating / 5; 0.5 if unrated)
+ 
+distance_score = max(0, 1 - distance_km / 50)    (0 if the worker has no location)
+Worked example. A worker 3 km away, available, with the required skill, 5 years experience and no ratings scores 0.4 x 0.94 + 0.2 + 0.2 + 0.1 x 0.5 + 0.1 x 0.5 = 0.876. A worker 186 km away, lacking the skill, with 1 year experience and no ratings scores 0.2 + 0.01 + 0.05 = 0.26.
+•	Explainability. Every result lists human-readable reasons, so farmers understand why a worker is ranked high.
+•	Complexity. O(W) over W worker profiles per request, plus one rating query per worker. Fine for a prototype; see Section 14.
+•	Weights are constants in app/matching.py and are documented so they can be tuned and evaluated.
+•	Evolution. Once real matching outcomes exist (accepted, completed, no-show), train a ranking model and compare it against this baseline on top-k relevance and completion rate. This comparison is the proposed research contribution.
+7.5 Nearby-job search
+Open jobs are loaded, the Haversine great-circle distance from the worker's coordinates to each farm is computed, jobs beyond radius_km are dropped, an optional skill filter is applied, and results are sorted by distance. Distance is rounded to 0.1 km.
+8. Security Design
+8.1 Authentication
+•	Passwords are hashed with bcrypt (salted, slow). Passwords must be 8 to 64 characters.
+•	Login returns a JWT (HS256) containing the user id (sub), role and expiry (12 hours by default). The secret comes from the JWT_SECRET environment variable.
+•	Every protected request re-loads the user from the database, so a deleted user's token stops working.
+•	Only FARMER and WORKER may self-register; ADMIN and AGRI_EXPERT accounts must be created by an administrator (planned).
+8.2 Authorisation matrix
+Capability	FARMER	WORKER	Other user
+Create farm, post job	Yes (own farms)	No (403)	No
+Apply to job	No (403)	Yes	No
+View applicants and matches	Own jobs only	No	No
+Accept applicant, complete booking	Own jobs only	No	No
+Update worker profile	No	Own profile	No
+Review a booking	If participant	If participant	No (403)
+Browse jobs, view job or worker profile	Yes	Yes	Yes (authenticated)
+
+8.3 Threats and mitigations
+Threat	Mitigation	Status
+Credential stuffing / brute force	bcrypt cost; add rate limiting and lockout	Rate limiting PLANNED
+Token theft	Short expiry, HTTPS only; add refresh tokens and revocation	PLANNED
+Horizontal privilege escalation (farmer B edits farmer A's job)	Ownership check on every job, application, booking route; tested	IMPLEMENTED
+Vertical escalation (worker uses farmer routes)	Role dependency on routes; tested	IMPLEMENTED
+SQL injection	ORM with bound parameters, no string-built SQL	IMPLEMENTED
+Invalid or malicious input	Pydantic validation and range checks	IMPLEMENTED
+Cross-origin abuse	CORS restricted to configured origins	IMPLEMENTED
+Malicious file uploads (crop images)	Type, size and content validation; store outside web root	PLANNED
+Prompt injection into RAG / agent	Treat retrieved text as data; tool allow-list; confirmation gate	PLANNED
+Secrets in source control	Environment variables; secret scanning in CI	Partly (env vars); CI PLANNED
+No audit trail	audit_logs for sensitive actions	PLANNED
+
+8.4 Privacy
+The system stores names, contact details and approximate locations. Collect only what is needed, show a worker's exact location only to a farmer they applied to, allow account deletion, and review obligations under India's Digital Personal Data Protection Act, 2023 before any real-user pilot.
+9. AI / ML Components and Profit Simulator (Planned)
+Status: This section is a design, not an implementation. No model has been trained yet, and no accuracy figures are claimed.
+9.1 Crop intelligence
+Inputs: location, land size, soil values (pH, N, P, K) when available, water availability, season, budget, crop history. Outputs: candidate crops, water need, approximate duration, input considerations, the factors behind the result, and stated uncertainty. Approach: start with a rule/knowledge-based scorer over a curated crop table; optionally compare with a small scikit-learn classifier trained on a public crop-recommendation dataset. Results are shown as decision support with a pointer to local agricultural officers.
+9.2 Crop-disease detection
+Farmer uploads image -> API validates type/size -> store in blob storage -> ML module
+  -> preprocess (resize, normalise) -> CNN classifier (transfer learning)
+  -> label + confidence -> if confidence < threshold: "not sure, consult an expert"
+  -> RAG retrieves guidance for the label -> plain-language explanation with sources
+•	Model: transfer learning from an ImageNet-pretrained network (for example MobileNetV3 or EfficientNet-B0) fine-tuned on a public plant-disease dataset.
+•	Evaluation: accuracy, per-class precision/recall/F1, confusion matrix, and performance on real field photos taken outside the training distribution. Lab-style datasets often overstate real-world accuracy, so reporting this gap is a core result.
+•	Safety: low-confidence predictions are not presented as findings; output always states it is not a professional diagnosis.
+9.3 Agricultural RAG
+1.	Collect trusted documents (extension bulletins, government agriculture material) and record source metadata.
+2.	Extract text, clean, and split into overlapping chunks (about 500 tokens, 50 overlap).
+3.	Embed chunks and store vectors in PostgreSQL with pgvector.
+4.	At question time embed the query, retrieve the top-k chunks, and pass them to the LLM with an instruction to answer only from the context and to say when the context is insufficient.
+5.	Return the answer with source references (document, page).
+Evaluation: a hand-built set of 30 to 50 realistic farmer questions; measure retrieval relevance (is the right chunk in the top k?), groundedness (is every claim supported by retrieved text?) and citation coverage.
+9.4 Farm AI agent
+The agent is an orchestrator that can call only whitelisted application tools, each running with the calling user's permissions:
+Tool	Effect	Confirmation
+getFarmDetails	Read the user's farm data	No
+findWorkers	Run the matcher for a job	No
+searchAgriDocs	RAG lookup	No
+getMarketInfo	Read prices	No
+analyzeCropImage	Run disease model on an uploaded image	No
+runProfitSimulation	Run the profit simulator with the user's inputs	No
+createJobDraft	Prepare a job (not posted)	User reviews
+accept worker, post job, payments	Consequential actions	Always explicit user confirmation
+
+Metrics: task success rate, tool-call accuracy, confirmation rate, latency and cost per interaction. The agent is never given unrestricted database or shell access.
+9.5 Market intelligence
+Ingest legitimate public price data, normalise crop, market, unit and date, store with source and date, show current and historical trends, and compare net return (price minus estimated transport cost) across nearby markets. A simple time-series forecast (for example seasonal-naive versus ARIMA/Prophet) may be explored later and must be shown with uncertainty; the product never promises a future price.
+9.6 ML-based matching
+Collect outcomes (accepted, completed, cancelled, no-show, rating) and features (distance, skill match, experience, reputation, past completion). Train a gradient-boosted ranking model and compare it with the rule-based baseline using top-k relevance and completion rate. Keep whichever performs better and remains explainable.
+9.7 Farmer profit simulator
+A deterministic what-if calculator that helps a farmer see whether a crop is likely to pay and where to sell it. It uses transparent arithmetic over inputs the farmer can edit, so it needs no training data and can be fully unit-tested. It also connects the marketplace to farm economics: the labour cost line can be pre-filled from real wages posted on AgriConnect.
+gross_revenue    = expected_yield_qtl * selling_price_per_qtl
+labour_cost      = workers * days * wage_per_day      (default from average posted wages)
+total_cost       = seed + fertilizer + pesticide + irrigation + labour + machinery + transport + other
+net_profit       = gross_revenue - total_cost
+profit_per_acre  = net_profit / area_acres
+break_even_price = total_cost / expected_yield_qtl
+break_even_yield = total_cost / selling_price_per_qtl
+ 
+Selling option net price (per quintal) =
+    ( market_price - transport_per_qtl - commission - storage_cost_per_day * days_stored )
+    * ( 1 - shrinkage_percent / 100 )
+•	Scenarios: low / base / high cases for yield and price (for example -20%, 0, +20%), shown side by side so the farmer sees the risk range, not a single number.
+•	Compare selling options: local market now, a farther market with a higher price but more transport, or storing for some days. Options are ranked by net price and net profit.
+•	Sensitivity: show how profit changes for +/-10% price and yield, and highlight the break-even price.
+•	Interface (planned): POST /api/simulations/profit takes the inputs above and returns the scenarios, break-even values and ranked selling options. Saved simulations are stored per farm for later comparison.
+•	Honesty: results depend on the numbers entered; the screen states that prices and yields are estimates, not guarantees.
+•	Tests: unit tests for each formula with hand-calculated cases, plus edge cases for zero yield and zero price.
+10. Frontend Design (Planned)
+•	Stack: React + TypeScript, Vite, a typed API client generated from /openapi.json, React Query for server state.
+•	Farmer screens: register/login, my farms, post job, my jobs with applicants and ranked matches, bookings, worker profile and ratings, profit simulator.
+•	Worker screens: register/login, profile (skills, location, availability), nearby jobs with distance and wage, applications, work history and rating.
+•	Usability for the target users: large touch targets, minimal text, icons, local-language UI (i18n), and voice input for posting jobs.
+•	Offline-first PWA: cache job lists and queue applications when offline, syncing when the network returns.
+•	Token handling: store the token in memory or secure storage, attach it to requests, and redirect to login on 401.
+11. Infrastructure and DevOps
+11.1 Environments
+Environment	Database	How to run
+Local development	SQLite file	uvicorn app.main:app --reload --reload-dir app
+Local with PostgreSQL	PostgreSQL 16 container	docker compose up --build
+Cloud (planned)	Managed PostgreSQL	Container image deployed to Azure
+
+11.2 CI/CD pipeline (planned, GitHub Actions)
+1.	On every push and pull request: install dependencies, lint, run pytest, run dependency and secret scans.
+2.	On merge to main: build the Docker image and push to a container registry.
+3.	Deploy the image to the staging app, run smoke tests against /health, then promote to production.
+11.3 Azure target architecture (planned)
+Azure Container Apps (or App Service) for the API container, Azure Database for PostgreSQL, Blob Storage for images and documents, Key Vault for secrets, Application Insights for monitoring. Keep the design lean: a small set of services that each has a clear purpose. Stop or scale down non-production resources when idle to conserve credits.
+12. Testing Design
+12.1 Implemented tests (9 passing)
+Test	What it proves
+test_matching (4 tests)	Perfect worker scores 1.0; nearer skilled worker beats far unskilled; distance beyond 50 km gives no distance points; unrated workers get neutral reputation
+test_full_marketplace_flow	Register three users, worker profiles, farm, job; 403 for worker posting; 401 without token; nearby search; matching order; apply; duplicate apply 409; accept fills job and rejects other application; review before completion 409; complete; two-way reviews; stranger review 403; average rating; bookings for both roles
+test_farmer_cannot_touch_another_farmers_job	Ownership checks on applications, matches and accept
+test_auth_validation_and_login	Duplicate email (case-insensitive), weak password, invalid role, login success and failure
+test_job_fills_only_when_enough_workers_accepted	Multi-worker job stays OPEN until the last position is filled
+test_past_start_date_is_rejected	Date validation
+
+Each test uses a fresh in-memory SQLite database through a dependency override, so tests are isolated and fast (about 5 seconds for the suite).
+12.2 Planned tests
+•	Endpoint tests for notifications, admin actions, the profit simulator and the AI endpoints; contract tests against the OpenAPI schema.
+•	PostgreSQL integration tests in CI (same tests, real database).
+•	Frontend component tests and end-to-end tests for the critical journeys (post job, apply, accept).
+•	Security tests: authorisation, invalid input, upload abuse, rate limits.
+•	ML/RAG/agent evaluation reports (Section 9) with fixed test sets and recorded metrics.
+•	Target: at least 80% line coverage on business logic before final submission.
+13. Observability and Operations
+•	Health: GET /health for load balancers and uptime checks.
+•	Logging: structured JSON logs with a request id (planned); never log passwords, tokens or personal data.
+•	Metrics (planned): request rate, latency percentiles, error rate, database query time; product metrics from the Master Document.
+•	Audit log (planned): who accepted, completed or reviewed what, and when.
+•	Backups: managed PostgreSQL automated backups; test a restore before the final demo.
+14. Performance and Scalability
+Concern	Current behaviour	Planned improvement
+Nearby jobs	Loads all open jobs and computes distance in Python	Bounding-box pre-filter on lat/lon columns with an index; later PostGIS geospatial index
+Matching	Loops over all workers with one rating query each	Pre-filter by distance box and availability; compute ratings in a single grouped query; cache
+Lists	Return full lists	Add pagination (limit/offset or cursor)
+Repeated reads	No cache	Redis for hot reads (open jobs, worker reputation)
+Long tasks (ML, embeddings)	Not present	Background worker queue so the API stays responsive
+Scaling out	Single instance	Stateless API (JWT) allows multiple replicas behind a load balancer
+
+Expected prototype load is tens of concurrent users, which the current design handles comfortably; the improvements above are for growth beyond a pilot.
+15. Known Limitations and Technical Debt
+#	Limitation	Impact	Planned fix
+1	No database migrations (create_all)	Schema changes can lose data	Adopt Alembic
+2	No token refresh or revocation	A stolen token is valid until expiry	Short-lived access + refresh tokens
+3	No rate limiting	Brute force and abuse	Middleware or gateway limits
+4	No double-booking check	A worker can be booked on overlapping dates	Check date overlap when accepting
+5	CANCELLED status unused	No way to cancel a job or booking	Add cancel endpoints and no-show tracking
+6	Skills stored as a JSON list	No skill catalogue or levels	Normalise into skills tables
+7	Distance is straight-line	Road distance can differ	Optional routing API later
+8	No notifications	Workers must open the app to see jobs	In-app, then WhatsApp/SMS
+9	No admin or verification	No moderation or trust badges	Admin module, phone OTP
+10	Wages and money as floats	Rounding in future payments	Use decimal/integer paise before payments
+
+Appendix A: Environment Variables
+Variable	Default	Meaning
+DATABASE_URL	sqlite:///./agriconnect.db	SQLAlchemy URL, for example postgresql+psycopg2://user:pass@host:5432/agriconnect
+JWT_SECRET	dev-only value	Signing secret. Must be long, random and secret in any real deployment
+JWT_EXPIRY_MINUTES	720	Token lifetime
+CORS_ORIGINS	http://localhost:5173,http://localhost:3000	Comma-separated allowed browser origins
+
+Appendix B: Example Requests
+# Register a farmer
+curl -X POST http://localhost:8000/api/auth/register -H "Content-Type: application/json" \
+  -d '{"name":"Ravi","email":"ravi@example.com","password":"password123","role":"FARMER"}'
+ 
+# Create a farm (use the token from the response)
+curl -X POST http://localhost:8000/api/farms -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ravi Farm","area_acres":3.5,"latitude":13.63,"longitude":79.40,"soil_info":"red soil"}'
+ 
+# Post a job
+curl -X POST http://localhost:8000/api/jobs -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"farm_id":1,"work_type":"Groundnut harvesting","required_skill":"harvesting",
+       "workers_required":1,"start_date":"2026-10-25","duration_days":2,"wage_per_day":500}'
+Appendix C: Glossary
+Term	Meaning
+API	Application Programming Interface; the set of HTTP endpoints the frontend calls
+JWT	JSON Web Token; a signed token proving who the caller is
+RBAC	Role-based access control
+ORM	Object-relational mapper; maps Python classes to database tables
+Haversine	Formula for great-circle distance between two latitude/longitude points
+RAG	Retrieval-augmented generation: retrieve trusted text, then have an LLM answer from it
+Embedding	Numeric vector representing the meaning of text, used for similarity search
+pgvector	PostgreSQL extension for storing and searching vectors
+PWA	Progressive web app; installable, can work offline
+Quintal (qtl)	Indian unit of weight: 100 kg
+MVP	Minimum viable product
+ADR	Architecture decision record
+

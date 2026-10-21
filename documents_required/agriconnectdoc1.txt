@@ -1,0 +1,357 @@
+AGRICONNECT
+AI-Powered Agricultural Workforce & Farm Intelligence Platform
+Project Master Document
+Vision, scope, plan, status, risks, quality, research and submission package in one place
+Field	Value
+Document	AgriConnect - Project Master Document
+Version	1.0
+Date	19 October 2026
+Author	Katta Guravaiah  (Roll No. 23KB1A0597)
+Department / college	[add department and college name]
+Project guide	[add guide name]
+Project type	B.Tech final-year major project
+Companion documents	Technical Design Document; Software Requirements & Development Specification
+
+B.Tech Final-Year Project  |  Project Master Document
+Contents
+1. Document Control
+2. Executive Summary
+3. Vision, Problem and Objectives
+4. Scope
+5. Stakeholders and Users
+6. Product Overview and Feature Roadmap
+7. Solution Summary and Decision Log
+8. Current Status
+9. Work Plan and Milestones
+10. Roles and Responsibilities
+11. Risk Register
+12. Quality Plan and Success Measures
+13. Research Plan
+14. User Validation Plan
+15. Deployment, Operations and Cost
+16. Legal, Ethical and Safety Considerations
+17. Final Submission Package
+18. Demo Script and Viva Preparation
+19. Glossary, Index and Change Log
+1. Document Control
+Item	Detail
+Purpose	Single source of truth for what AgriConnect is, why it exists, what is done, what remains and how it will be judged
+Audience	Project guide, examiners, the developer, and future contributors
+Maintenance	Updated at the end of every sprint; status and change log sections change most often
+Related documents	TDD (how it is built), SRS and Development Specification (what it must do, how work is run), original blueprint (initial concept)
+
+Version history
+Version	Date	Change
+0.1	Earlier	Original blueprint document (concept, modules, roadmap)
+0.5	30 Sep 2026	Backend MVP built in FastAPI; 9 tests passing; run locally with Swagger UI
+1.0	19 Oct 2026	Three-document set created: TDD, SRS and Development Specification, Project Master Document
+
+2. Executive Summary
+AgriConnect is a web platform for agriculture with two layers. The first is a labour marketplace: farmers post jobs, nearby workers apply, a transparent matching engine ranks candidates with explanations, bookings are tracked and both sides rate each other. The second layer is farm intelligence: a profit simulator, crop guidance, crop-disease detection from photos, a question-answering assistant grounded in trusted documents, and market price information.
+Where the project stands: the marketplace backend is built in Python and FastAPI, runs locally, and passes 9 automated tests covering the full flow from registration to ratings. The remaining work is the user interface, hardening, the profit simulator, one or two carefully evaluated AI modules, cloud deployment and user validation.
+Why it is a strong final-year project: it solves a real problem, has a working core, uses a deliberately simple baseline that ML must beat, and treats evaluation, safety and honesty as part of the engineering rather than as afterthoughts.
+3. Vision, Problem and Objectives
+3.1 Vision
+A trusted digital bridge between farmers and workers that also helps farmers make better decisions, built so that people with a basic phone and limited literacy can use it.
+3.2 Problem statement
+•	Farmers often find labour through personal contacts, at the last moment, with little information about reliability.
+•	Workers lack visibility of nearby work, clear wages and dates, and have no portable record of their reputation.
+•	Small farmers have limited access to timely, trustworthy advice on crop choice, disease and selling decisions.
+3.3 Objectives
+ID	Objective	How it is measured
+O1	Deliver a working marketplace covering post, find, apply, hire, complete, rate	End-to-end test passes; demo with real users
+O2	Rank workers transparently and show why	Every match includes reasons; unit-tested scoring
+O3	Help farmers judge profitability and selling options	Profit simulator with scenarios and break-even; formula tests
+O4	Detect common crop diseases from photos honestly	Per-class metrics plus performance on real field photos
+O5	Answer agricultural questions with sources	Retrieval relevance and groundedness on a 30 to 50 question set
+O6	Be usable by the target users	Pilot users complete core tasks without help
+O7	Be secure, tested and deployable	Role and ownership tests; CI pipeline; cloud demo
+
+4. Scope
+4.1 In scope
+•	Accounts and roles for farmers and workers; farms; worker profiles; jobs; applications; bookings; reviews; rule-based matching.
+•	Responsive web front end (PWA) with local-language support and offline basics.
+•	Farmer profit simulator with scenarios and selling-option comparison.
+•	At least one fully evaluated AI module (crop-disease detection or RAG), with the other as stretch.
+•	Notifications (in-app first, then WhatsApp or SMS).
+•	Cloud deployment, CI/CD, monitoring, documentation and a final report.
+4.2 Out of scope (first release)
+•	Payments, wallets and payroll; legal contracts and insurance.
+•	Fully autonomous AI actions; any guarantee of yield, price or diagnosis.
+•	Native mobile apps (the PWA covers mobile for now).
+•	Large-scale pricing forecasts and drone or satellite analysis.
+4.3 Priority approach
+Features are ranked with MoSCoW. Must: marketplace, auth, tests, front end, one evaluated AI module. Should: profit simulator, notifications, local language, offline. Could: agent, market forecasts, group applications, ML-based matching. If time is short the Could items are dropped first.
+4.4 Assumptions and constraints
+•	One developer, one academic year, student cloud credits.
+•	No real matching data at launch; public datasets for ML; curated documents for RAG.
+•	Pilot users are reachable for interviews and testing.
+5. Stakeholders and Users
+Stakeholder	Interest	Involvement
+Farmers (primary user)	Reliable labour, cost and profit clarity, crop help	Interviews, pilot testing, feedback
+Workers (primary user)	Nearby work, fair wages, reputation	Interviews, pilot testing, feedback
+Project guide	Academic quality, feasibility, evaluation rigour	Reviews at milestones
+Department / examiners	Technical depth, originality, documentation, demo	Final evaluation and viva
+Domain experts (agri officers)	Correctness of agricultural guidance	Review of crop and disease content (planned)
+Developer	Learning, delivery, portfolio	All development work
+
+5.1 Personas
+Persona	Profile	Goal	Pain point
+Ravi, farmer	3.5-acre groundnut farmer; smartphone; limited English	Find 4 harvest workers within a week at a fair wage	Relies on phone calls; workers cancel at short notice
+Suresh, worker	5 years harvesting experience; basic phone; Telugu only	Find steady nearby work with clear pay	Hears about jobs late; has no proof of reliability
+
+6. Product Overview and Feature Roadmap
+Module	Capability	Priority	Status
+Accounts and roles	Register, login, JWT, role permissions	Must	Done
+Farms and profiles	Farms; worker skills, experience, location, availability	Must	Done
+Jobs	Post, list, nearby search, status lifecycle	Must	Done
+Applications and bookings	Apply, accept, auto-fill job, complete	Must	Done
+Matching	Weighted, explainable ranking	Must	Done
+Reviews and reputation	Two-way ratings and averages	Must	Done
+Hardening	Migrations, pagination, cancel, no-show, double-booking, rate limits, audit log	Must	Planned
+Frontend	React PWA for farmer and worker journeys	Must	Planned
+Profit simulator	Revenue, cost, profit, break-even, scenarios, selling options	Should	Planned
+Notifications	In-app, WhatsApp or SMS alerts	Should	Planned
+Accessibility	Local language, voice input, offline mode	Should	Planned
+Crop-disease ML	Photo classification with confidence and guidance	Must (one AI module)	Planned
+RAG assistant	Cited answers from trusted documents	Should	Planned
+Crop intelligence	Crop suggestions with reasons and uncertainty	Should	Planned
+Market intelligence	Price trends and net-return comparison	Could	Planned
+Farm AI agent	Tool-using assistant with confirmation gate	Could	Planned
+ML matching	Ranking model compared with baseline	Could	Planned
+
+6.1 Farmer profit simulator: why it matters
+The simulator turns farm economics into a transparent calculation the farmer can adjust: revenue, total cost, net profit, profit per acre, break-even price and yield, low/base/high scenarios, and a comparison of selling options after transport, commission, storage and shrinkage. It needs no training data, can be tested exactly, and links to the marketplace because labour cost can be filled from the wages actually posted on AgriConnect. It is a good early AI-adjacent feature because it delivers value before any model is trained.
+7. Solution Summary and Decision Log
+7.1 Architecture in brief
+A modular monolith: React front end, FastAPI REST API with JWT and role checks, SQLAlchemy over PostgreSQL (SQLite in development), internal modules for matching and later ML/RAG/simulator, Docker for packaging and Azure as the cloud target. Full detail is in the Technical Design Document.
+7.2 Technology stack
+Layer	Choice
+Backend	Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2, PyJWT, bcrypt, Uvicorn
+Database	SQLite (dev), PostgreSQL 16 (prod); Alembic migrations planned
+Frontend	React + TypeScript, Vite, React Query; PWA
+AI	PyTorch or scikit-learn; pgvector for retrieval; LLM through an adapter
+DevOps	Docker, GitHub Actions, Azure (Container Apps, PostgreSQL, Blob Storage, Key Vault, Monitor)
+Testing	pytest, FastAPI TestClient; Vitest and Playwright planned
+
+7.3 Decision log
+ID	Decision	Alternatives	Reason	Date
+D1	Modular monolith, not microservices	Microservices	One developer; simpler deployment and testing; split later if needed	Blueprint
+D2	Marketplace before AI	AI first	A working core is the foundation; AI needs the app to deliver value	Blueprint
+D3	Rule-based matching as baseline, ML later	ML from the start	No outcome data yet; transparent and explainable; gives something to compare against	Blueprint
+D4	Backend language changed from Java/Spring Boot to Python/FastAPI	Stay with Java	ML, RAG and agents are Python-native; one language; faster to build and test	Sep 2026
+D5	Build AgriConnect before other project ideas	Other projects first	Largest scope and strongest final-year fit	Oct 2026
+D6	Add farmer profit simulator as a module	Skip it	High user value, no data dependency, exactly testable, links to marketplace wages	Oct 2026
+D7	No payments in the first release	Integrate a gateway	Compliance and risk beyond a student project; revisit later	Blueprint
+D8	PostgreSQL with pgvector for RAG	Separate vector database	One datastore; fewer moving parts	Blueprint
+
+8. Current Status
+8.1 What is built and verified
+•	Backend API with 19 endpoints plus a health check; interactive docs at /docs.
+•	Accounts, roles and tokens; farms; worker profiles; jobs with nearby search; applications; bookings; reviews; ranked matching with explanations.
+•	9 automated tests passing (4 matching unit tests, 5 API tests including the full marketplace flow and permission checks).
+•	Docker and docker-compose files for PostgreSQL.
+•	The server was run locally and a farmer account was registered through Swagger UI (HTTP 201 with a token).
+8.2 Not yet done
+•	Frontend; notifications; admin; migrations; rate limiting; double-booking and cancellation handling.
+•	Profit simulator, crop intelligence, disease ML, RAG, agent, market data.
+•	Cloud deployment, CI/CD, monitoring, pilot validation, final report.
+8.3 Known issues and technical debt
+Listed in section 15 of the Technical Design Document (for example no migrations, no token refresh, no rate limiting, no double-booking check, straight-line distance only).
+8.4 Immediate next steps
+1.	Move the backend into a Git repository on GitHub and commit with a clear history.
+2.	Build the React front end for the farmer flow (login, farm, post job, applicants and matches).
+3.	Build the worker flow (profile, nearby jobs, apply, my bookings).
+4.	Implement the profit simulator API and screen.
+5.	Choose the first AI module and collect its dataset.
+9. Work Plan and Milestones
+Durations are planning estimates and should be adjusted to the actual academic calendar; fill in target dates once the submission deadline and review dates are known.
+Phase	Outcome	Est. effort	Status	Target date
+0 Foundation	Requirements, architecture, repo, auth and roles	10 days	Done	-
+1 Marketplace backend	Complete flow with tests and matching	15 days	Done	-
+2 Hardening	Migrations, pagination, cancel/no-show, rate limits, audit log	8 days	Next	[date]
+3 Frontend MVP	Farmer and worker journeys in the browser	20 days	Planned	[date]
+4 Profit simulator	Simulator API and screen with tests	8 days	Planned	[date]
+5 Access and alerts	Notifications, local language, offline, voice	15 days	Planned	[date]
+6 Crop-disease ML	Trained, evaluated model behind an API and screen	15 days	Planned	[date]
+7 RAG assistant	Cited answers with evaluation	15 days	Planned	[date]
+8 Agent and market	Tool layer with confirmations; price trends	12 days	Stretch	[date]
+9 Cloud and CI/CD	Deployed, monitored, backed up	8 days	Planned	[date]
+10 Validation and report	Pilot results, evaluation chapters, final report, demo video	15 days	Planned	[date]
+
+9.1 Milestones
+Milestone	Evidence for the guide
+M1 Backend MVP	Tests pass; Swagger demo of full flow (achieved)
+M2 Usable product	Frontend demo with real flows on a phone
+M3 First intelligence	Profit simulator live; first AI module trained with metrics
+M4 Deployed system	Public URL, CI pipeline, monitoring, backup restore tested
+M5 Validated	Pilot feedback and measured results
+M6 Submission	Report, code, demo video, presentation
+
+9.2 Dependencies and critical path
+The critical path is backend, frontend, deployment, validation, report. The AI modules depend on a stable API but can run in parallel with the frontend once their datasets are ready. The report should be written alongside each phase rather than at the end.
+10. Roles and Responsibilities
+Activity	Developer	Guide	Pilot users	Domain expert
+Requirements and scope	R, A	C	C	C
+Design and architecture	R, A	C	-	-
+Implementation and tests	R, A	I	-	-
+Agricultural content review	R	I	-	A, C
+Usability testing	R, A	I	C	-
+Evaluation and report	R, A	C	-	-
+Final approval	R	A	-	-
+
+R = responsible, A = accountable, C = consulted, I = informed.
+11. Risk Register
+ID	Risk	Likelihood	Impact	Mitigation
+R1	Scope too large for one developer	High	High	MoSCoW; one AI module fully evaluated before adding more; drop Could items first
+R2	AI accuracy lower on real field photos than on dataset	High	Medium	Collect real test photos early; report the gap; use confidence threshold and expert referral
+R3	No real data for ML matching	High	Medium	Keep rule-based baseline as the main matcher; use simulation with documented assumptions for comparison
+R4	Wrong or unsafe agricultural advice from AI	Medium	High	RAG with citations, refusal when unsupported, disclaimers, expert review of content
+R5	Cloud costs exceed credits	Medium	Medium	Small footprint; shut down staging when idle; budget alerts
+R6	Low digital literacy limits adoption	Medium	Medium	Simple screens, local language, voice, test with real users early
+R7	Security flaw exposes user data	Medium	High	Ownership and role tests, input validation, secrets in environment, rate limiting, dependency scans
+R8	Pilot users not available	Medium	Medium	Start recruitment now; use family and village contacts; fall back to scripted scenarios with feedback from the guide
+R9	Third-party service or data licence problems (LLM, prices, documents)	Medium	Medium	Adapters to swap providers; check licences; cache and cite sources
+R10	Data loss or laptop failure	Low	High	GitHub for code, cloud backups, copies of datasets and documents
+R11	Time lost to environment problems	Medium	Low	Docker, documented setup, virtual environments
+
+12. Quality Plan and Success Measures
+12.1 Quality activities
+•	Automated tests for every Must requirement; coverage target 80% of business logic.
+•	Pull requests with a Definition of Done checklist.
+•	Security tests for every role-restricted route.
+•	Manual end-to-end run before each demo.
+•	Evaluation reports for every AI module with fixed test sets.
+12.2 Success measures
+Area	Measure	Target
+Engineering	Tests passing; coverage of business logic	All pass; at least 80%
+Marketplace	Pilot jobs posted and filled; time to fill; cancellation rate	Report actuals; baseline versus later weeks
+Matching	Share of accepted workers who were in the top 3 suggestions; later ML versus rule-based on top-k relevance	Report both; keep the better explainable model
+Usability	Pilot users completing core tasks without help; time to first job	At least 80% of tasks without help; under 5 minutes for a new worker
+Disease ML	Per-class F1; accuracy on real field photos	Report honestly, including the gap to dataset accuracy
+RAG	Top-k retrieval relevance; groundedness; citation coverage on 30 to 50 questions	Report; refuse when unsupported
+Performance	p95 response time at 50 concurrent users	Under 500 ms
+Profit simulator	Formula correctness; user understanding in pilot	All formula tests pass; users can explain the result
+
+Honesty rule: Targets above are goals, not results. No accuracy, usage or performance number is to be quoted in the report until it has actually been measured.
+13. Research Plan
+13.1 Research questions
+1.	Does a hybrid matching approach (rule-based plus learned ranking) improve top-k relevance and completion rate compared with the rule-based baseline?
+2.	How well does a crop-disease classifier trained on a public dataset perform on real field photos compared with its dataset test set?
+3.	Do cited, retrieval-grounded answers reduce unsupported claims compared with an ungrounded assistant on the same questions?
+Choose one or two as the formal research contribution; the rest become engineering features.
+13.2 Method summary
+Question	Data	Method	Metrics
+Matching	Simulated or pilot outcomes	Rule-based baseline versus gradient-boosted ranker; cross-validation	Top-k relevance, completion rate
+Disease detection	Public dataset plus own field photos	Transfer learning; fixed split; error analysis	Accuracy, per-class F1, confusion matrix, real-photo accuracy
+RAG	Curated documents; 30 to 50 questions	Compare grounded versus ungrounded answers	Relevance, groundedness, citation coverage
+
+13.3 Reproducibility
+•	Fixed random seeds, recorded library versions, versioned datasets and evaluation scripts in the repository.
+•	All reported numbers come from saved scripts and logs.
+14. User Validation Plan
+Step	Activity	Output
+1	Interview 5 to 10 farmers and workers about how they find and hire labour, wages, trust and phone use	Notes and quotes for the report; adjust priorities
+2	Show clickable screens or the early app; observe real tasks	Usability issues list
+3	Pilot with a small group for 2 to 4 weeks; record jobs, applications and outcomes	Real usage data and feedback
+4	Short survey and follow-up interviews	Satisfaction, trust, suggested improvements
+
+Sample interview questions
+•	Farmers: How do you find workers now? How far ahead? What goes wrong? What would make you trust a worker? How do you decide which crop to plant and where to sell?
+•	Workers: How do you hear about work? What wage and travel distance do you accept? What would you want to show to prove you are reliable? Which language and phone do you use?
+Ethics: explain the purpose, obtain consent, collect only needed data, anonymise in the report, and allow participants to withdraw.
+15. Deployment, Operations and Cost
+Environment	Purpose	Notes
+Local	Development and tests	SQLite; uvicorn or Docker
+Staging (planned)	Pre-release checks and demos	Small database; stop when idle
+Production (planned)	Pilot users and final demo	Managed PostgreSQL, HTTPS, backups, monitoring
+
+•	Cost control: use the smallest tiers, set budget alerts, delete unused resources, and cache AI calls where allowed.
+•	Backups: automated database backups; restore tested once before the final demo.
+•	Operations: /health check, uptime monitor, structured logs without personal data, error alerts.
+•	Fallback demo: keep a local Docker build and a recorded video in case of network failure on demo day.
+16. Legal, Ethical and Safety Considerations
+•	Advice disclaimer: crop, disease and profit outputs are decision support, not professional or guaranteed advice; users are directed to local agricultural officers for important decisions.
+•	AI limits: show confidence, cite sources, refuse unsupported answers, and never let the agent take consequential actions without explicit confirmation.
+•	Privacy: minimal data, secure storage, deletion on request, location shown only where needed; review India's DPDP Act 2023 before real-user use.
+•	Fairness: matching must not use caste, religion, gender or similar attributes; reputation should be explainable and contestable.
+•	Labour considerations: show wages clearly; no payments in the first release; encourage fair pay information (average local wage) without enforcing prices.
+•	Data and content licences: use only datasets, documents and prices whose licences permit the use; cite sources in the report.
+17. Final Submission Package
+17.1 Deliverables checklist
+Deliverable	Status
+Source code repository with README, tests and Docker files	Backend ready; frontend and AI pending
+Technical Design Document	Done (this set)
+Software Requirements and Development Specification	Done (this set)
+Project Master Document	Done (this set)
+Final project report (chapters below)	Pending
+Working deployed demo and local fallback	Pending
+Demo video (3 to 5 minutes)	Pending
+Presentation slides	Pending
+Evaluation results (ML, RAG, usability)	Pending
+User interview and pilot summary	Pending
+
+17.2 Suggested report chapters
+Chapter	Content	Source material
+1 Introduction	Problem, motivation, objectives, scope	Sections 3 and 4 of this document
+2 Literature and existing systems	Labour platforms, agri advisory apps, crop-disease detection, RAG	To be researched; cite sources
+3 Requirements	Functional and non-functional requirements, use cases	SRS
+4 System design	Architecture, data model, API, algorithms, security	TDD
+5 Implementation	Modules, key code, screenshots	Repository
+6 AI components	Datasets, models, RAG, simulator, evaluation setup	TDD section 9 and ML notebooks
+7 Testing and results	Test strategy, coverage, ML/RAG metrics, usability findings	Test and evaluation reports
+8 Deployment	Cloud setup, CI/CD, monitoring, cost	TDD section 11
+9 Conclusion and future work	Contributions, limitations, next steps	Sections 8 and 13
+Appendices	API reference, test list, interview guides, user feedback	TDD, SRS
+
+18. Demo Script and Viva Preparation
+18.1 Five-minute demo script
+1.	Problem in one sentence (30 seconds), with a quote from a farmer interview if available.
+2.	Farmer logs in, shows the farm, posts a groundnut harvesting job.
+3.	Worker logs in on a phone, sees the job under nearby jobs with distance and wage, and applies.
+4.	Farmer opens ranked matches and points out the reasons behind the top score; accepts the worker.
+5.	Farmer marks the work complete; both sides rate each other; the worker's average rating updates.
+6.	Farmer opens the profit simulator, compares two selling options and shows break-even price.
+7.	Show one AI feature: upload a leaf photo, see label, confidence and cited guidance.
+8.	Close with test results, evaluation numbers and what is planned next.
+18.2 Likely viva questions and answers
+Question	Suggested answer
+Why did you start with a rule-based matcher?	There is no outcome data yet, rules are transparent and explainable, and they provide a baseline that any ML model must beat.
+Why Python and FastAPI?	ML, RAG and agent components are Python-native, so one language keeps the system simple; FastAPI gives validation and API docs automatically. The original plan was Java; the architecture did not change.
+How do you secure the API?	bcrypt password hashing, signed JWTs, role checks on routes, ownership checks on every job-related action, input validation, restricted CORS; all covered by tests. Rate limiting and refresh tokens are planned.
+How is the match score computed?	Weighted sum: distance 40%, availability 20%, skill 20%, experience 10%, reputation 10%, each scaled 0 to 1; unrated workers get a neutral reputation; reasons are returned with each result.
+How do you prevent two farmers or workers interfering?	Every protected action checks the user's role and ownership; for example only the farm owner can see applicants or accept a worker; tests cover these cases.
+What stops duplicate applications or reviews?	Application logic checks plus database uniqueness constraints on (job, worker) and (booking, reviewer).
+How will you evaluate the disease model honestly?	Fixed split, per-class metrics and a confusion matrix, plus a separate test on real field photos to show the gap from dataset accuracy.
+How do you stop the AI giving harmful advice?	RAG with citations, refusal when sources are insufficient, confidence thresholds, disclaimers, expert review of content, and confirmation before any action.
+What does the profit simulator do and why is it reliable?	Deterministic formulas for revenue, cost, profit and break-even with scenario ranges; every formula is unit-tested; results are labelled as estimates.
+How would it scale?	The API is stateless so it can run as several replicas; add pagination, geospatial indexes, caching, background jobs for ML; move to managed PostgreSQL.
+What are the limitations?	No payments, straight-line distance, no migrations yet, no refresh tokens, limited real data; all are listed with planned fixes.
+What is novel?	Explainable labour matching tied to reputation, combined with farm decision support (profit simulation, cited advice) in one low-literacy-friendly platform, with honest evaluation of each AI part.
+What would you do with more time?	Payments with escrow, route-based distance, ML ranking from real outcomes, more languages, offline-first sync, and expert-reviewed knowledge base.
+
+19. Glossary, Index and Change Log
+19.1 Glossary
+Term	Meaning
+Baseline	A simple method used as a reference for comparison
+Break-even price	Selling price per quintal at which profit is zero
+Confidence	A model's estimated certainty in its prediction
+Groundedness	Whether every claim in an answer is supported by retrieved sources
+MoSCoW	Must, Should, Could, Won't prioritisation
+PWA	Progressive web app; installable and usable offline
+RAG	Retrieval-augmented generation
+Top-k relevance	Whether a good candidate appears within the first k results
+
+19.2 Document index
+Document	Answers the question
+Project Master Document (this file)	What are we building, why, where are we, what is next, how will it be judged?
+Software Requirements & Development Specification	What must the system do, how well, and how is the work run?
+Technical Design Document	How is it built: architecture, data, API, algorithms, security, AI, DevOps?
+Original blueprint	What was the initial concept and roadmap?
+
+19.3 Change log
+Date	Change	Reason
+30 Sep 2026	Backend language changed from Java/Spring Boot to Python/FastAPI	Python-native ML/RAG, testable build, faster delivery
+Oct 2026	Farmer profit simulator added to scope	High user value, testable, links to marketplace wages
+19 Oct 2026	Three-document set issued (v1.0)	Formal project documentation
+

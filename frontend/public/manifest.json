@@ -1,0 +1,16 @@
+{
+  "short_name": "AgriConnect",
+  "name": "AgriConnect: AI Agricultural Workforce & Farm Intelligence Platform",
+  "description": "Labour marketplace and farm intelligence for farmers and rural workers",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#15803d",
+  "background_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

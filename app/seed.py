@@ -140,38 +140,6 @@ def seed_demo_data(db: Session) -> dict:
             available=True,
         ))
 
-    # 5. Guravaiah Katta (User's Google Account)
-    user_email = "kattaguravaiah39@gmail.com"
-    g_user = db.scalar(select(models.User).where(models.User.email == user_email))
-    if not g_user:
-        g_user = models.User(
-            name="Guravaiah Katta",
-            email=user_email,
-            phone="+91 94401 98765",
-            password_hash=hash_password("oauth-google-user"),
-            role=models.Role.HYBRID.value,
-        )
-        db.add(g_user)
-        db.flush()
-
-        db.add(models.Farm(
-            owner_id=g_user.id,
-            name="Sri Venkateswara Agro Farm",
-            area_acres=4.0,
-            latitude=13.635,
-            longitude=79.405,
-            soil_info="Red sandy loam, optimal organic matter & groundwater",
-        ))
-
-        db.add(models.WorkerProfile(
-            user_id=g_user.id,
-            skills=["harvesting", "spraying", "tractor operation"],
-            experience_years=5,
-            latitude=13.635,
-            longitude=79.405,
-            available=True,
-        ))
-
     # Initial notifications
     if farmer and not db.scalar(select(models.Notification).where(models.Notification.user_id == farmer.id)):
         db.add(models.Notification(

@@ -29,6 +29,11 @@ def rank_workers(db: Session, job: models.Job) -> list[dict]:
     need = (job.required_skill or "").strip().lower()
     results = []
     for p in db.scalars(select(models.WorkerProfile)):
+        # Never recommend the farm owner as a worker for their own job
+        if p.user_id == farm.owner_id:
+            continue
+        if not getattr(p.user, "is_active", True):
+            continue
         dist = None
         if p.latitude is not None and p.longitude is not None:
             dist = distance_km(farm.latitude, farm.longitude, p.latitude, p.longitude)

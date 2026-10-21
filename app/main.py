@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -14,12 +14,15 @@ from .seed import seed_demo_data
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    Base.metadata.create_all(engine)  # MVP only; switch to Alembic migrations before production
-    with SessionLocal() as db:
-        try:
-            seed_demo_data(db)
-        except Exception:
-            pass
+    try:
+        Base.metadata.create_all(engine)  # MVP only; switch to Alembic migrations before production
+        with SessionLocal() as db:
+            try:
+                seed_demo_data(db)
+            except Exception as e:
+                print("Seed demo data notice:", e)
+    except Exception as e:
+        print("Database startup notice (non-fatal):", e)
     yield
 
 
@@ -62,3 +65,39 @@ def demo_reset(db: Session = Depends(get_db)):
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     return seed_demo_data(db)
+
+
+# Serve frontend SPA if built assets are present
+from pathlib import Path
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+_frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if _frontend_dist.exists():
+    _assets_dir = _frontend_dist / "assets"
+    if _assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(_assets_dir)), name="assets")
+
+    @app.get("/", include_in_schema=False)
+    def root_spa():
+        index_file = _frontend_dist / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+        return {"status": "ok", "app": "AgriConnect", "version": "1.0.0"}
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def catch_all_spa(full_path: str):
+        if full_path.startswith(("api", "health", "docs", "redoc", "openapi.json")):
+            raise HTTPException(404, "Not Found")
+        file_candidate = _frontend_dist / full_path
+        if file_candidate.is_file():
+            return FileResponse(file_candidate)
+        index_file = _frontend_dist / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+        return {"status": "ok", "app": "AgriConnect", "version": "1.0.0"}
+else:
+    @app.get("/", include_in_schema=False)
+    def root_api():
+        return {"status": "ok", "app": "AgriConnect", "version": "1.0.0"}
+

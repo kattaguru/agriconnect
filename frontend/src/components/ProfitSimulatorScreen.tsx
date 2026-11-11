@@ -16,8 +16,14 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { SimulationOutput } from '../types';
+import { Language, getT } from '../i18n';
 
-export const ProfitSimulatorScreen: React.FC = () => {
+interface ProfitSimulatorScreenProps {
+  lang?: Language;
+}
+
+export const ProfitSimulatorScreen: React.FC<ProfitSimulatorScreenProps> = ({ lang = 'en' }) => {
+  const t = getT(lang);
   // Input fields
   const [cropName, setCropName] = useState('Groundnut');
   const [areaAcres, setAreaAcres] = useState('3.5');
@@ -137,10 +143,10 @@ export const ProfitSimulatorScreen: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h2 style={{ fontSize: '1.6rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Calculator size={26} color="#22c55e" /> Farmer Profit & Economics Simulator
+            <Calculator size={26} color="#22c55e" /> {t('simulatorTitle')}
           </h2>
           <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-            Interactive scenario analysis, break-even thresholds, and net-realization selling option comparisons
+            {t('simulatorSubtitle')}
           </p>
         </div>
 
@@ -152,7 +158,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
             <Printer size={15} color="#38bdf8" /> Print / Export Advisory
           </button>
           <button onClick={handleSaveSimulation} className="btn-primary btn-sm" style={{ gap: 6 }}>
-            <Bookmark size={15} /> Save Portfolio
+            <Bookmark size={15} /> {t('saveSimulationBtn')}
           </button>
         </div>
       </div>
@@ -177,28 +183,28 @@ export const ProfitSimulatorScreen: React.FC = () => {
         {/* Left Column: Input Form */}
         <div className="glass-panel" style={{ padding: '22px' }}>
           <h3 style={{ fontSize: '1.15rem', marginBottom: 16, color: '#f8fafc', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 10 }}>
-            1. Crop & Production Parameters
+            1. {t('cropTypeLabel')} & {t('farmAreaLabel')}
           </h3>
 
           <div className="form-group">
-            <label className="form-label">Crop Name</label>
+            <label className="form-label">{t('cropTypeLabel')}</label>
             <select
               className="form-select"
               value={cropName}
               onChange={(e) => setCropName(e.target.value)}
             >
-              <option value="Groundnut">Groundnut (వేరుశనగ)</option>
-              <option value="Paddy (Rice)">Paddy (వరి)</option>
-              <option value="Cotton">Cotton (ప్రత్తి)</option>
-              <option value="Tomato">Tomato (టమాటా)</option>
-              <option value="Maize">Maize (మొక్కజొన్న)</option>
-              <option value="Red Gram">Red Gram / Toor (కంది)</option>
+              <option value="Groundnut">Groundnut (వేరుశనగ / मूंगफली)</option>
+              <option value="Paddy (Rice)">Paddy (వరి / धान)</option>
+              <option value="Cotton">Cotton (ప్రత్తి / कपास)</option>
+              <option value="Tomato">Tomato (టమాటా / टमाटर)</option>
+              <option value="Maize">Maize (మొక్కజొన్న / मक्का)</option>
+              <option value="Red Gram">Red Gram / Toor (కంది / अरहर)</option>
             </select>
           </div>
 
           <div className="grid-cols-3">
             <div className="form-group">
-              <label className="form-label">Area (Acres)</label>
+              <label className="form-label">{t('farmAreaLabel')}</label>
               <input
                 type="number"
                 step="0.5"
@@ -209,7 +215,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Expected Yield (Qtl)</label>
+              <label className="form-label">{t('expectedYieldLabel')}</label>
               <input
                 type="number"
                 min="1"
@@ -219,7 +225,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Selling Price (₹/Qtl)</label>
+              <label className="form-label">{t('expectedPriceLabel')}</label>
               <input
                 type="number"
                 min="500"
@@ -232,12 +238,12 @@ export const ProfitSimulatorScreen: React.FC = () => {
           </div>
 
           <h3 style={{ fontSize: '1.15rem', margin: '20px 0 14px', color: '#f8fafc', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 10 }}>
-            2. Itemized Cost Breakdown (₹)
+            2. {t('totalCost')} (₹)
           </h3>
 
           <div className="grid-cols-2">
             <div className="form-group">
-              <label className="form-label">Seed Cost (₹)</label>
+              <label className="form-label">{t('costSeeds')}</label>
               <input
                 type="number"
                 className="form-input"
@@ -246,7 +252,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Fertilizer (DAP/Urea) (₹)</label>
+              <label className="form-label">{t('costFertilizers')}</label>
               <input
                 type="number"
                 className="form-input"
@@ -255,7 +261,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Pesticides & Bio (₹)</label>
+              <label className="form-label">{t('costPesticides')}</label>
               <input
                 type="number"
                 className="form-input"
@@ -264,7 +270,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Irrigation / Diesel (₹)</label>
+              <label className="form-label">{t('costIrrigation')}</label>
               <input
                 type="number"
                 className="form-input"
@@ -274,7 +280,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
             </div>
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Labour Cost (₹)</span>
+                <span>{t('costLabor')}</span>
                 <span style={{ color: '#22c55e', fontSize: '0.75rem' }}>Auto-fillable</span>
               </label>
               <input
@@ -328,12 +334,12 @@ export const ProfitSimulatorScreen: React.FC = () => {
                     border: '1px solid rgba(34, 197, 94, 0.3)',
                   }}
                 >
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>Gross Revenue</span>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>{t('grossRevenue')}</span>
                   <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f8fafc', marginTop: 4 }}>
                     ₹{results.gross_revenue.toLocaleString()}
                   </div>
                   <span style={{ fontSize: '0.78rem', color: '#4ade80' }}>
-                    {results.area_acres} Acres @ {results.break_even_yield.toFixed(1)} qtl breakeven
+                    {results.area_acres} {t('acres')} @ {results.break_even_yield.toFixed(1)} qtl breakeven
                   </span>
                 </div>
 
@@ -345,12 +351,12 @@ export const ProfitSimulatorScreen: React.FC = () => {
                     border: '1px solid rgba(239, 68, 68, 0.25)',
                   }}
                 >
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>Total Production Cost</span>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>{t('totalCost')}</span>
                   <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f87171', marginTop: 4 }}>
                     ₹{results.total_cost.toLocaleString()}
                   </div>
                   <span style={{ fontSize: '0.78rem', color: '#fca5a5' }}>
-                    ₹{(results.total_cost / results.area_acres).toFixed(0)} / acre
+                    ₹{(results.total_cost / results.area_acres).toFixed(0)} / {t('acres')}
                   </span>
                 </div>
 
@@ -364,7 +370,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
                     border: `1px solid ${results.net_profit >= 0 ? '#22c55e' : '#ef4444'}`,
                   }}
                 >
-                  <span style={{ fontSize: '0.8rem', color: '#cbd5e1', textTransform: 'uppercase' }}>Net Expected Profit</span>
+                  <span style={{ fontSize: '0.8rem', color: '#cbd5e1', textTransform: 'uppercase' }}>{t('netProfit')}</span>
                   <div
                     style={{
                       fontSize: '1.6rem',
@@ -376,7 +382,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
                     ₹{results.net_profit.toLocaleString()}
                   </div>
                   <span style={{ fontSize: '0.78rem', color: results.net_profit >= 0 ? '#86efac' : '#fca5a5' }}>
-                    ₹{results.profit_per_acre.toFixed(0)} per acre
+                    ₹{results.profit_per_acre.toFixed(0)} / {t('acres')}
                   </span>
                 </div>
               </div>
@@ -398,7 +404,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Scale size={24} color="#f59e0b" />
                   <div>
-                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Break-Even Price</span>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t('breakEvenPrice')}</span>
                     <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fbbf24' }}>
                       ₹{results.break_even_price.toFixed(1)} / qtl
                     </div>
@@ -410,7 +416,7 @@ export const ProfitSimulatorScreen: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <TrendingUp size={24} color="#22c55e" />
                   <div>
-                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Break-Even Yield</span>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t('breakEvenYield')}</span>
                     <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4ade80' }}>
                       {results.break_even_yield.toFixed(1)} Quintals
                     </div>

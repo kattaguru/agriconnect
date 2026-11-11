@@ -23,8 +23,14 @@ import {
 import { api } from '../api';
 import { Farm, Job, Application, MatchCandidate, Booking } from '../types';
 import { ReviewModal } from './ReviewModal';
+import { Language, getT } from '../i18n';
 
-export const MarketplaceFarmer: React.FC = () => {
+interface MarketplaceFarmerProps {
+  lang?: Language;
+}
+
+export const MarketplaceFarmer: React.FC<MarketplaceFarmerProps> = ({ lang = 'en' }) => {
+  const t = getT(lang);
   const [farms, setFarms] = useState<Farm[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -341,14 +347,14 @@ export const MarketplaceFarmer: React.FC = () => {
       {/* Header Row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h2 style={{ fontSize: '1.6rem', color: '#f8fafc' }}>Farmer Operations Dashboard</h2>
+          <h2 style={{ fontSize: '1.6rem', color: '#f8fafc' }}>{t('farmerDashboardTitle')}</h2>
           <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-            Manage farmlands, post labor requirements, and review algorithm-ranked candidates
+            {t('farmerDashboardSubtitle')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={() => setShowAddFarm(true)} className="btn-secondary">
-            <Plus size={18} /> Add Farm
+            <Plus size={18} /> {t('addFarmBtn')}
           </button>
           <button
             onClick={() => {
@@ -365,7 +371,7 @@ export const MarketplaceFarmer: React.FC = () => {
             }}
             className="btn-primary"
           >
-            <Plus size={18} /> Post New Job
+            <Plus size={18} /> {t('postNewJobBtn')}
           </button>
         </div>
       </div>
@@ -373,17 +379,17 @@ export const MarketplaceFarmer: React.FC = () => {
       {/* Farms section */}
       <div className="glass-panel" style={{ padding: '20px 24px' }}>
         <h3 style={{ fontSize: '1.15rem', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <MapPin size={20} color="#22c55e" /> My Registered Farms ({farms.length})
+          <MapPin size={20} color="#22c55e" /> {t('myRegisteredFarms')} ({farms.length})
         </h3>
         {farms.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '36px 16px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: 'var(--radius-md)', border: '1px dashed rgba(34, 197, 94, 0.3)' }}>
             <span style={{ fontSize: '2.4rem' }}>🌾</span>
-            <h4 style={{ color: '#f8fafc', fontSize: '1.15rem', marginTop: 8 }}>Welcome to Your Personal Farmer Space</h4>
+            <h4 style={{ color: '#f8fafc', fontSize: '1.15rem', marginTop: 8 }}>{t('welcomeFarmerSpace')}</h4>
             <p style={{ color: '#94a3b8', fontSize: '0.88rem', maxWidth: '460px', margin: '6px auto 16px' }}>
-              You don't have any farmlands registered in your account yet. Register your land with live GPS coordinates to start posting jobs and hiring verified workers.
+              {t('noFarmsRegisteredDesc')}
             </p>
             <button onClick={() => setShowAddFarm(true)} className="btn-primary" style={{ margin: '0 auto', gap: 8 }}>
-              <Plus size={16} /> Register My First Farm
+              <Plus size={16} /> {t('registerFirstFarmBtn')}
             </button>
           </div>
         ) : (
@@ -400,7 +406,7 @@ export const MarketplaceFarmer: React.FC = () => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <h4 style={{ fontSize: '1.05rem', color: '#f8fafc' }}>{f.name}</h4>
-                  <span className="badge badge-green">{f.area_acres} Acres</span>
+                  <span className="badge badge-green">{f.area_acres} {t('acres')}</span>
                 </div>
                 <p style={{ color: '#94a3b8', fontSize: '0.84rem', marginTop: 6 }}>
                   📍 {f.latitude.toFixed(2)}°N, {f.longitude.toFixed(2)}°E
@@ -419,17 +425,26 @@ export const MarketplaceFarmer: React.FC = () => {
       {/* Posted Jobs section */}
       <div className="glass-panel" style={{ padding: '20px 24px' }}>
         <h3 style={{ fontSize: '1.15rem', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Users size={20} color="#f59e0b" /> Posted Farm Jobs ({jobs.length})
+          <Users size={20} color="#f59e0b" /> {t('postedFarmJobs')} ({jobs.length})
         </h3>
 
         {jobs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-            <p>No jobs posted yet. Click "Post New Job" to hire nearby agricultural workers.</p>
+            <p>{t('noJobsPostedDesc')}</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {jobs.map((j) => {
               const isSelected = selectedJobId === j.id;
+              const statusText =
+                j.status === 'OPEN'
+                  ? t('statusOpen')
+                  : j.status === 'FILLED'
+                  ? t('statusFilled')
+                  : j.status === 'COMPLETED'
+                  ? t('statusCompleted')
+                  : t('statusCancelled');
+
               return (
                 <div
                   key={j.id}
@@ -456,16 +471,16 @@ export const MarketplaceFarmer: React.FC = () => {
                               : 'badge-red'
                           }`}
                         >
-                          {j.status}
+                          {statusText}
                         </span>
                       </div>
                       <p style={{ color: '#94a3b8', fontSize: '0.86rem', marginTop: 4 }}>
-                        Farm: <strong style={{ color: '#cbd5e1' }}>{j.farm_name}</strong> | Start:{' '}
-                        <strong style={{ color: '#cbd5e1' }}>{j.start_date}</strong> ({j.duration_days} days) | Required Skill:{' '}
+                        Farm: <strong style={{ color: '#cbd5e1' }}>{j.farm_name}</strong> | {t('startDateLabel')}:{' '}
+                        <strong style={{ color: '#cbd5e1' }}>{j.start_date}</strong> ({j.duration_days} {t('days')}) | {t('requiredSkillLabel')}:{' '}
                         <span className="badge badge-amber">{j.required_skill || 'General Labour'}</span>
                         {j.notified_workers_count !== undefined && j.notified_workers_count !== null && (
                           <span className="badge badge-blue" style={{ marginLeft: 8 }}>
-                            📢 {j.notified_workers_count} Alerted
+                            📢 {j.notified_workers_count} {t('alertedWorkersBadge')}
                           </span>
                         )}
                       </p>
@@ -474,10 +489,10 @@ export const MarketplaceFarmer: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#4ade80' }}>
-                          ₹{j.wage_per_day} <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>/day</span>
+                          ₹{j.wage_per_day} <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t('perDay')}</span>
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                          {j.workers_required} worker{j.workers_required > 1 ? 's' : ''} needed
+                          {j.workers_required} {t('workersNeeded')}
                         </div>
                       </div>
 
@@ -485,7 +500,7 @@ export const MarketplaceFarmer: React.FC = () => {
                         onClick={() => handleSelectJob(j.id)}
                         className={`btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
                       >
-                        {isSelected ? 'Hide Candidates' : 'Review Candidates'}
+                        {isSelected ? t('hideCandidatesBtn') : t('reviewCandidatesBtn')}
                       </button>
 
                       {j.status === 'OPEN' && (
@@ -495,7 +510,7 @@ export const MarketplaceFarmer: React.FC = () => {
                           style={{ color: '#f87171' }}
                           title="Cancel Job"
                         >
-                          <XCircle size={16} /> Cancel
+                          <XCircle size={16} /> {t('cancelJobBtn')}
                         </button>
                       )}
                     </div>
@@ -515,24 +530,24 @@ export const MarketplaceFarmer: React.FC = () => {
                           onClick={() => setActiveTab('matches')}
                           className={`btn-sm ${activeTab === 'matches' ? 'btn-primary' : 'btn-secondary'}`}
                         >
-                          <Sparkles size={15} /> Ranked Matches ({matches.length})
+                          <Sparkles size={15} /> {t('rankedMatchesTab')} ({matches.length})
                         </button>
                         <button
                           onClick={() => setActiveTab('applicants')}
                           className={`btn-sm ${activeTab === 'applicants' ? 'btn-primary' : 'btn-secondary'}`}
                         >
-                          <Users size={15} /> Applied Candidates ({applicants.length})
+                          <Users size={15} /> {t('directApplicantsTab')} ({applicants.length})
                         </button>
                       </div>
 
                       {loadingJobDetails ? (
                         <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
-                          Calculating optimal candidate ranking...
+                          {t('calculatingRanking')}
                         </div>
                       ) : activeTab === 'matches' ? (
                         <div>
                           <p style={{ fontSize: '0.84rem', color: '#94a3b8', marginBottom: 12 }}>
-                            Rule-based matching algorithm weights distance (40%), availability (20%), skill (20%), experience (10%), and reputation (10%).
+                            {t('matchingCriteriaNote')}
                           </p>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {matches.map((m, idx) => (
@@ -571,7 +586,7 @@ export const MarketplaceFarmer: React.FC = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                       <strong style={{ fontSize: '1rem', color: '#f8fafc' }}>{m.name}</strong>
                                       <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
-                                        Score: {(m.score * 100).toFixed(0)}%
+                                        {t('matchScore')}: {(m.score * 100).toFixed(0)}%
                                       </span>
                                     </div>
                                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
@@ -616,8 +631,8 @@ export const MarketplaceFarmer: React.FC = () => {
                                         <BarChart2 size={12} />
                                         <span>
                                           {expandedCandidateScores[m.worker_id]
-                                            ? 'Hide transparent formula breakdown'
-                                            : 'View algorithm weight breakdown'}
+                                            ? t('hideFormulaBreakdown')
+                                            : t('viewFormulaBreakdown')}
                                         </span>
                                         {expandedCandidateScores[m.worker_id] ? (
                                           <ChevronUp size={12} />
@@ -678,10 +693,10 @@ export const MarketplaceFarmer: React.FC = () => {
 
                                 <div>
                                   {applicants.some((a) => a.worker_id === m.worker_id) ? (
-                                    <span className="badge badge-amber">Already Applied</span>
+                                    <span className="badge badge-amber">{t('alreadyAppliedBadge')}</span>
                                   ) : (
                                     <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                      Available in network
+                                      {t('availableInNetwork')}
                                     </span>
                                   )}
                                 </div>
@@ -693,7 +708,7 @@ export const MarketplaceFarmer: React.FC = () => {
                         <div>
                           {applicants.length === 0 ? (
                             <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                              No workers have submitted applications yet.
+                              {t('noApplicantsYet')}
                             </p>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -735,7 +750,7 @@ export const MarketplaceFarmer: React.FC = () => {
                                         onClick={() => handleAcceptApplication(a.id)}
                                         className="btn-sm btn-primary"
                                       >
-                                        Accept & Hire
+                                        {t('acceptAndHireBtn')}
                                       </button>
                                     )}
                                   </div>
@@ -757,11 +772,11 @@ export const MarketplaceFarmer: React.FC = () => {
       {/* Bookings & Completion section */}
       <div className="glass-panel" style={{ padding: '20px 24px' }}>
         <h3 style={{ fontSize: '1.15rem', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <CheckCircle2 size={20} color="#10b981" /> Hired Workers & Bookings ({bookings.length})
+          <CheckCircle2 size={20} color="#10b981" /> {t('hiredWorkersTitle')} ({bookings.length})
         </h3>
         {bookings.length === 0 ? (
           <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-            No confirmed bookings yet. Accept applicants on open jobs above to confirm labor.
+            {t('noBookingsYetDesc')}
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -795,7 +810,7 @@ export const MarketplaceFarmer: React.FC = () => {
                 <div style={{ display: 'flex', gap: 8 }}>
                   {b.status === 'CONFIRMED' && (
                     <button onClick={() => handleCompleteBooking(b.id)} className="btn-sm btn-primary">
-                      Mark Completed
+                      {t('markCompleted')}
                     </button>
                   )}
                   {b.status === 'COMPLETED' && (
@@ -804,7 +819,7 @@ export const MarketplaceFarmer: React.FC = () => {
                       className="btn-sm btn-secondary"
                       style={{ color: '#fbbf24' }}
                     >
-                      <Star size={15} /> Rate Worker
+                      <Star size={15} /> {t('rateWorkerBtn')}
                     </button>
                   )}
                 </div>
@@ -818,10 +833,10 @@ export const MarketplaceFarmer: React.FC = () => {
       {showAddFarm && (
         <div className="modal-backdrop">
           <div className="modal-content" style={{ maxWidth: '500px' }}>
-            <h3 style={{ fontSize: '1.3rem', marginBottom: 14 }}>Register Farmland</h3>
+            <h3 style={{ fontSize: '1.3rem', marginBottom: 14 }}>{t('addFarmModalTitle')}</h3>
             <form onSubmit={handleCreateFarm}>
               <div className="form-group">
-                <label className="form-label">Farm / Land Name</label>
+                <label className="form-label">{t('farmNameLabel')}</label>
                 <input
                   type="text"
                   required
@@ -841,13 +856,13 @@ export const MarketplaceFarmer: React.FC = () => {
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: '0.85rem', borderColor: '#22c55e', color: '#86efac' }}
                 >
                   <Navigation size={15} />
-                  <span>{detectingGps ? 'Querying Satellite GPS...' : '📍 Auto-Detect Farm Coordinates via Device GPS'}</span>
+                  <span>{detectingGps ? t('detectingGpsBtn') : t('useLiveGpsBtn')}</span>
                 </button>
               </div>
 
               <div className="grid-cols-3">
                 <div className="form-group">
-                  <label className="form-label">Area (Acres)</label>
+                  <label className="form-label">{t('landAreaLabel')}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -883,7 +898,7 @@ export const MarketplaceFarmer: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Soil & Water Characteristics</label>
+                <label className="form-label">{t('soilWaterInfoLabel')}</label>
                 <textarea
                   className="form-textarea"
                   rows={2}
@@ -895,10 +910,10 @@ export const MarketplaceFarmer: React.FC = () => {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowAddFarm(false)}>
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button type="submit" className="btn-primary">
-                  Save Farm
+                  {t('saveFarmBtn')}
                 </button>
               </div>
             </form>
@@ -910,7 +925,7 @@ export const MarketplaceFarmer: React.FC = () => {
       {showPostJob && (
         <div className="modal-backdrop">
           <div className="modal-content" style={{ maxWidth: '520px' }}>
-            <h3 style={{ fontSize: '1.3rem', marginBottom: 14 }}>Post Labor Requirement</h3>
+            <h3 style={{ fontSize: '1.3rem', marginBottom: 14 }}>{t('postJobModalTitle')}</h3>
 
             {postJobError && (
               <div
@@ -934,7 +949,7 @@ export const MarketplaceFarmer: React.FC = () => {
 
             <form onSubmit={handleCreateJob}>
               <div className="form-group">
-                <label className="form-label">Select Farm</label>
+                <label className="form-label">{t('selectFarmlandLabel')}</label>
                 <select
                   className="form-select"
                   value={selectedFarmId || (farms.length > 0 ? farms[0].id : '')}
@@ -946,7 +961,7 @@ export const MarketplaceFarmer: React.FC = () => {
                   ) : (
                     farms.map((f) => (
                       <option key={f.id} value={f.id}>
-                        {f.name} ({f.area_acres} acres)
+                        {f.name} ({f.area_acres} {t('acres')})
                       </option>
                     ))
                   )}
@@ -955,7 +970,7 @@ export const MarketplaceFarmer: React.FC = () => {
 
               <div className="form-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <label className="form-label" style={{ marginBottom: 0 }}>Work Type / Operation</label>
+                  <label className="form-label" style={{ marginBottom: 0 }}>{t('workTypeLabel')}</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <select
                       value={voiceLang}
@@ -993,7 +1008,7 @@ export const MarketplaceFarmer: React.FC = () => {
                       title="Dictate work requirements in your preferred language"
                     >
                       {isListeningVoice ? <MicOff size={13} /> : <Mic size={13} />}
-                      <span>{isListeningVoice ? 'Listening...' : '🎙️ Speak to Fill'}</span>
+                      <span>{isListeningVoice ? t('listening') : t('speakToFill')}</span>
                     </button>
                   </div>
                 </div>
@@ -1001,7 +1016,7 @@ export const MarketplaceFarmer: React.FC = () => {
                   type="text"
                   required
                   className="form-input"
-                  placeholder="e.g. Groundnut harvesting & pod stripping (or click Speak)"
+                  placeholder="e.g. Groundnut harvesting & pod stripping"
                   value={workType}
                   onChange={(e) => setWorkType(e.target.value)}
                 />
@@ -1009,7 +1024,7 @@ export const MarketplaceFarmer: React.FC = () => {
 
               <div className="grid-cols-2">
                 <div className="form-group">
-                  <label className="form-label">Required Skill Tag</label>
+                  <label className="form-label">{t('requiredSkillTag')}</label>
                   <input
                     type="text"
                     className="form-input"
@@ -1019,7 +1034,7 @@ export const MarketplaceFarmer: React.FC = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Workers Needed</label>
+                  <label className="form-label">{t('numWorkersLabel')}</label>
                   <input
                     type="number"
                     min="1"
@@ -1033,7 +1048,7 @@ export const MarketplaceFarmer: React.FC = () => {
 
               <div className="grid-cols-3">
                 <div className="form-group">
-                  <label className="form-label">Start Date</label>
+                  <label className="form-label">{t('startDateLabel')}</label>
                   <input
                     type="date"
                     required
@@ -1044,7 +1059,7 @@ export const MarketplaceFarmer: React.FC = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Duration (Days)</label>
+                  <label className="form-label">{t('durationDaysLabel')}</label>
                   <input
                     type="number"
                     min="1"
@@ -1055,7 +1070,7 @@ export const MarketplaceFarmer: React.FC = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Wage / Day (₹)</label>
+                  <label className="form-label">{t('dailyWageLabel')}</label>
                   <input
                     type="number"
                     min="100"
@@ -1090,7 +1105,7 @@ export const MarketplaceFarmer: React.FC = () => {
                       fontWeight: 600,
                     }}
                   >
-                    <Bell size={16} /> Worker Notification Broadcast Range
+                    <Bell size={16} /> {t('workerRangeTitle')}
                   </label>
                   <span
                     style={{
@@ -1145,7 +1160,7 @@ export const MarketplaceFarmer: React.FC = () => {
                 />
 
                 <p style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: 8, lineHeight: 1.4, marginBottom: 0 }}>
-                  ⚡ <strong>Auto-alert:</strong> Registered workers within {notifyRadiusKm} km of this farm will automatically receive an instant notification on their dashboard once posted.
+                  ⚡ <strong>Auto-alert:</strong> {t('autoAlertNotice')}
                 </p>
               </div>
 
@@ -1159,10 +1174,10 @@ export const MarketplaceFarmer: React.FC = () => {
                   }}
                   disabled={isPostingJob}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button type="submit" className="btn-primary" disabled={isPostingJob}>
-                  {isPostingJob ? 'Publishing Job...' : 'Publish Job'}
+                  {isPostingJob ? t('publishingJob') : t('publishJob')}
                 </button>
               </div>
             </form>
@@ -1177,6 +1192,7 @@ export const MarketplaceFarmer: React.FC = () => {
           bookingId={reviewBooking.id}
           workType={reviewBooking.work_type}
           partnerName={reviewBooking.worker_name}
+          lang={lang}
           onClose={() => setReviewBooking(null)}
           onSuccess={() => {
             fetchData();

@@ -1,0 +1,303 @@
+{
+  "metadata": {
+    "model_name": "AgriConnect-VisionRAG-v2",
+    "version": "2.0.0",
+    "trained_at": "2026-10-22T00:43:20.787311+00:00",
+    "training_samples": 1400,
+    "feature_keys": [
+      "chlorosis_ratio",
+      "necrosis_ratio",
+      "concentric_rings",
+      "spindle_lesions",
+      "leaf_curling",
+      "pustule_texture",
+      "water_soaked_margin",
+      "hue_mean",
+      "saturation_mean"
+    ],
+    "evaluation_accuracy_percent": 100.0,
+    "authoritative_sources": [
+      "ICAR - Indian Council of Agricultural Research",
+      "ANGRAU - Acharya N.G. Ranga Agricultural University",
+      "TNAU - Tamil Nadu Agricultural University"
+    ]
+  },
+  "classes": {
+    "groundnut_tikka": {
+      "crop": "Groundnut",
+      "disease_name": "Groundnut Tikka (Early & Late Leaf Spot)",
+      "pathogen": "Cercospora arachidicola / Phaeoisariopsis personata",
+      "symptoms": "Circular to subcircular dark-brown to black spots surrounded by a bright yellow chlorotic halo on older leaflets.",
+      "severity": "Moderate to High",
+      "centroid": [
+        0.41889186366925685,
+        0.3775294427314301,
+        0.29779413815674666,
+        0.05240757721820565,
+        0.08148358095490976,
+        0.1476930560007852,
+        0.19494493289483938,
+        0.22016620874110018,
+        0.6518663958757368
+      ]
+    },
+    "paddy_blast": {
+      "crop": "Paddy (Rice)",
+      "disease_name": "Rice Leaf Blast & Neck Blast",
+      "pathogen": "Magnaporthe oryzae (Pyricularia oryzae)",
+      "symptoms": "Spindle-shaped, elliptical lesions with gray-white ash centers and dark-brown margins on leaf blades.",
+      "severity": "High to Critical",
+      "centroid": [
+        0.25427512879158387,
+        0.45090329638049165,
+        0.05446820519329047,
+        0.8795168100214952,
+        0.11929281660345832,
+        0.09742844413676849,
+        0.40162475072938847,
+        0.27872634814239894,
+        0.5500097066114366
+      ]
+    },
+    "cotton_leaf_curl": {
+      "crop": "Cotton",
+      "disease_name": "Cotton Leaf Curl Viral Disease (CLCuD)",
+      "pathogen": "Cotton Leaf Curl Virus (CLCuV) transmitted by Bemisia tabaci",
+      "symptoms": "Upward or downward cupping of leaves, thick dark-green veins, and downward foliar enations (leaf-like outgrowths).",
+      "severity": "Severe",
+      "centroid": [
+        0.35073890344782854,
+        0.0982040172703774,
+        0.023804137160178082,
+        0.04064516819397321,
+        0.9166854921675253,
+        0.053318112374925605,
+        0.08515340443730685,
+        0.31628481954760296,
+        0.7179807489507662
+      ]
+    },
+    "tomato_early_blight": {
+      "crop": "Tomato",
+      "disease_name": "Tomato Early Blight (Target Spot)",
+      "pathogen": "Alternaria solani",
+      "symptoms": "Concentric rings with target-board pattern on lower leaves with dark necrotic zones and yellow surrounding halos.",
+      "severity": "Moderate to High",
+      "centroid": [
+        0.38142838191393685,
+        0.4804339466360117,
+        0.9015727144072849,
+        0.08148118564077649,
+        0.14911130429918998,
+        0.120388070453374,
+        0.21568975124846212,
+        0.1965301987745729,
+        0.5979018819001892
+      ]
+    },
+    "chilli_anthracnose": {
+      "crop": "Chilli",
+      "disease_name": "Chilli Anthracnose & Dieback",
+      "pathogen": "Colletotrichum capsici",
+      "symptoms": "Sunken circular dark lesions with concentric rings of black acervuli on pods and leaves, leading to twig dieback.",
+      "severity": "High",
+      "centroid": [
+        0.30061603883198224,
+        0.5207626221665933,
+        0.6505760036842189,
+        0.1553049027082059,
+        0.1962806777302151,
+        0.34710509509754245,
+        0.2961178075863955,
+        0.17771663546195277,
+        0.6812685841203168
+      ]
+    },
+    "corn_rust": {
+      "crop": "Corn / Maize",
+      "disease_name": "Maize Common Rust",
+      "pathogen": "Puccinia sorghi",
+      "symptoms": "Golden-brown to cinnamon-brown powdery pustules scattered on both upper and lower leaf surfaces.",
+      "severity": "Moderate",
+      "centroid": [
+        0.27657194755191605,
+        0.31832049260305395,
+        0.08218621709715764,
+        0.19867193530066218,
+        0.05529337768377898,
+        0.9168770552072231,
+        0.09776962458447214,
+        0.15320186654750784,
+        0.7526730756528286
+      ]
+    },
+    "healthy_foliage": {
+      "crop": "General Field Crop",
+      "disease_name": "Healthy Foliage (No Disease Detected)",
+      "pathogen": "None (Healthy Tissue)",
+      "symptoms": "Vibrant, uniform green chlorophyll pigmentation, intact leaf margins, no fungal pustules or viral vein clearing.",
+      "severity": "None",
+      "centroid": [
+        0.05076743429513493,
+        0.034148599298425425,
+        0.02164842407958331,
+        0.0201442248838278,
+        0.027659659551494634,
+        0.020719881068505495,
+        0.027756295799943317,
+        0.3606415112452558,
+        0.8462571007908246
+      ]
+    }
+  },
+  "rag_store": {
+    "groundnut_tikka": {
+      "crop": "Groundnut",
+      "disease_name": "Groundnut Tikka (Early & Late Leaf Spot)",
+      "pathogen": "Cercospora arachidicola / Phaeoisariopsis personata",
+      "organic_remedies": [
+        "Foliar spray of 5% Neem Seed Kernel Extract (NSKE) at early onset of spots",
+        "Spray Panchagavya (30 ml/L) mixed with Pseudomonas fluorescens (5 g/L)",
+        "Deep summer ploughing to bury fungal resting spores in crop residue",
+        "Foliar spray of fermented sour buttermilk (10%) at 10-day intervals"
+      ],
+      "chemical_treatments": [
+        "Mancozeb 75% WP @ 2.0 g/L or Carbendazim 50% WP @ 1.0 g/L at 15-day intervals",
+        "Hexaconazole 5% EC @ 2.0 ml/L for severe late leaf spot infections",
+        "Tebuconazole 25.9% EC @ 1.5 ml/L applied with 200 L water/acre"
+      ],
+      "cultural_practices": [
+        "Maintain 30x10 cm plant spacing for adequate foliar aeration",
+        "Avoid late afternoon overhead sprinkler irrigation that keeps leaves wet overnight",
+        "Practice 2-year crop rotation with non-host cereals (pearl millet, sorghum)"
+      ],
+      "pre_harvest_interval_days": 21,
+      "source": "ANGRAU Crop Protection Advisory AG-GN-2024 / ICAR-DGR Junagadh"
+    },
+    "paddy_blast": {
+      "crop": "Paddy (Rice)",
+      "disease_name": "Rice Leaf Blast & Neck Blast",
+      "pathogen": "Magnaporthe oryzae (Pyricularia oryzae)",
+      "organic_remedies": [
+        "Seed treatment with Pseudomonas fluorescens @ 10 g/kg seed before sowing",
+        "Foliar spray of cow urine (10%) fermented with Vitex negundo (Vaavili) leaf extract",
+        "Apply silicon fertilizers (calcium silicate) to strengthen leaf epidermal cell walls"
+      ],
+      "chemical_treatments": [
+        "Tricyclazole 75% WP @ 0.6 g/L water (most effective blast-specific fungicide)",
+        "Isoprothiolane 40% EC @ 1.5 ml/L water at early tillering",
+        "Kasugamycin 3% SL @ 2.5 ml/L during initial lesion development"
+      ],
+      "cultural_practices": [
+        "Avoid split overdosing of chemical nitrogen fertilizer during humid overcast weather",
+        "Maintain standing water depth of 2-3 cm to reduce drought stress blast susceptibility",
+        "Use blast-resistant varieties like MTU 1010, NLR 34449, or BPT 5204 with seed prophylaxis"
+      ],
+      "pre_harvest_interval_days": 28,
+      "source": "ICAR-Indian Institute of Rice Research (IIRR) Hyderabad Bulletin 18"
+    },
+    "cotton_leaf_curl": {
+      "crop": "Cotton",
+      "disease_name": "Cotton Leaf Curl Viral Disease (CLCuD)",
+      "pathogen": "Cotton Leaf Curl Virus (CLCuV) transmitted by Bemisia tabaci",
+      "organic_remedies": [
+        "Erect bright yellow sticky traps (15-20 per acre) at canopy level to monitor and trap whiteflies",
+        "Foliar spray of 10,000 ppm cold-pressed Neem oil @ 3 ml/L with soap emulsifier",
+        "Release natural bio-predators (Chrysoperla carnea @ 10,000 larvae/acre)"
+      ],
+      "chemical_treatments": [
+        "Flonicamid 50% WG @ 0.3 g/L or Diafenthiuron 50% WP @ 1.2 g/L targeting adult whiteflies",
+        "Pyriproxyfen 10% EC @ 2.0 ml/L to inhibit whitefly nymphal development",
+        "Afidopyropen 50 g/L DC @ 2.0 ml/L during initial vector flare-ups"
+      ],
+      "cultural_practices": [
+        "Uproot and destroy alternate host weeds (Abutilon indicum, Parthenium hysterophorus) along borders",
+        "Sow 2-3 barrier rows of maize, sorghum, or pearl millet around the cotton field",
+        "Avoid planting late-season cotton adjacent to tomato or okra fields"
+      ],
+      "pre_harvest_interval_days": 30,
+      "source": "ICAR-Central Institute for Cotton Research (CICR) Technical Bulletin 2024"
+    },
+    "tomato_early_blight": {
+      "crop": "Tomato",
+      "disease_name": "Tomato Early Blight (Target Spot)",
+      "pathogen": "Alternaria solani",
+      "organic_remedies": [
+        "Foliar spray of Trichoderma viride @ 5 g/L with 1% cow milk as organic spreader",
+        "Mulch beds with clean paddy straw (5 cm depth) to stop soil rain-splash spores",
+        "Spray Bordeaux mixture (1%) at 10-day intervals during wet weather"
+      ],
+      "chemical_treatments": [
+        "Azoxystrobin 23% SC @ 1.0 ml/L or Chlorothalonil 75% WP @ 2.0 g/L",
+        "Difenoconazole 25% EC @ 1.0 ml/L at onset of lower leaf spotting",
+        "Mancozeb 75% WP @ 2.5 g/L as preventive protective fungicide"
+      ],
+      "cultural_practices": [
+        "Prune the lower 30 cm foliage touching the soil bed to enhance airflow",
+        "Stake plants properly using trellis strings to keep foliage off ground dampness",
+        "Follow drip irrigation rather than overhead sprinklers to keep leaf canopy dry"
+      ],
+      "pre_harvest_interval_days": 7,
+      "source": "ICAR-IIHR Bengaluru Horticultural Extension Note 42"
+    },
+    "chilli_anthracnose": {
+      "crop": "Chilli",
+      "disease_name": "Chilli Anthracnose & Dieback",
+      "pathogen": "Colletotrichum capsici",
+      "organic_remedies": [
+        "Seed treatment with Trichoderma harzianum @ 10 g/kg seed before nursery sowing",
+        "Foliar spray of ginger + garlic + chilli extract (3%) as broad-spectrum antifungal",
+        "Spray Pseudomonas fluorescens (10 g/L) at flowering and fruit-set stages"
+      ],
+      "chemical_treatments": [
+        "Azoxystrobin 18.2% + Difenoconazole 11.4% SC @ 1.0 ml/L water",
+        "Copper Oxychloride 50% WP @ 2.5 g/L or Pyraclostrobin 20% WG @ 1.0 g/L",
+        "Propiconazole 25% EC @ 1.0 ml/L during fruit maturation"
+      ],
+      "cultural_practices": [
+        "Collect and burn infected twigs and mummified fruits from previous seasons",
+        "Provide raised nursery beds with nylon netting to prevent fungal spore drift",
+        "Ensure proper field drainage to prevent stagnant root-zone humidity"
+      ],
+      "pre_harvest_interval_days": 10,
+      "source": "ANGRAU Chilli Pathology Bulletins / ICAR-IIVR Varanasi"
+    },
+    "corn_rust": {
+      "crop": "Corn / Maize",
+      "disease_name": "Maize Common Rust",
+      "pathogen": "Puccinia sorghi",
+      "organic_remedies": [
+        "Foliar spray of fermented cow dung-urine slurry (Jeevamrit) @ 10%",
+        "Spray wettable sulfur @ 2.5 g/L early in the morning before heat rises"
+      ],
+      "chemical_treatments": [
+        "Mancozeb 75% WP @ 2.5 g/L applied when first pustules appear on lower leaves",
+        "Pyraclostrobin 20% WG @ 1.0 g/L or Azoxystrobin @ 1.0 ml/L"
+      ],
+      "cultural_practices": [
+        "Plant rust-tolerant commercial hybrids suited for the agro-climatic zone",
+        "Early synchronous planting across the village cluster to prevent late spore transfer"
+      ],
+      "pre_harvest_interval_days": 14,
+      "source": "ICAR-Indian Institute of Maize Research (IIMR) Ludhiana"
+    },
+    "healthy_foliage": {
+      "crop": "General Field Crop",
+      "disease_name": "Healthy Foliage (No Disease Detected)",
+      "pathogen": "None (Healthy Tissue)",
+      "organic_remedies": [
+        "Continue standard prophylactic organic booster sprays (Panchagavya 3% or Jeevamrit)",
+        "Conduct weekly field scouting checking 20 representative plants across an acre",
+        "Ensure balanced soil organic matter with well-rotted Farm Yard Manure (FYM)"
+      ],
+      "chemical_treatments": [
+        "No chemical fungicides or insecticides required at this healthy stage"
+      ],
+      "cultural_practices": [
+        "Maintain scheduled micro-irrigation and clean bund management to prevent weed hosts"
+      ],
+      "pre_harvest_interval_days": 0,
+      "source": "AgriConnect Field Diagnostic Core Engine"
+    }
+  }
+}

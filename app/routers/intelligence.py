@@ -7,7 +7,7 @@ from .. import models, schemas
 from ..database import get_db
 from ..geo import distance_km
 from ..security import current_user
-from ..services import record_audit
+from ..services import record_audit, crop_vision_rag
 
 router = APIRouter(prefix="/api/intelligence", tags=["intelligence"])
 
@@ -340,48 +340,52 @@ def scan_crop_disease(
     user: models.User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    key = (body.sample_id or "").strip().lower()
-    if key not in DISEASE_KNOWLEDGE:
-        crop_low = body.crop_name.lower()
-        if "groundnut" in crop_low or "peanut" in crop_low:
-            key = "groundnut_tikka"
-        elif "rice" in crop_low or "paddy" in crop_low:
-            key = "paddy_blast"
-        elif "cotton" in crop_low:
-            key = "cotton_leaf_curl"
-        elif "tomato" in crop_low:
-            key = "tomato_early_blight"
-        else:
-            key = "healthy_leaf"
-
-    info = DISEASE_KNOWLEDGE[key]
+    result = crop_vision_rag.analyze_crop_image(
+        crop_name=body.crop_name,
+        image_base64=body.image_base64,
+        sample_id=body.sample_id,
+    )
 
     # Record scan history in DB
     scan_record = models.CropScanHistory(
         user_id=user.id,
-        crop_name=info["crop_name"],
-        disease_name=info["disease_name"],
-        confidence=info["confidence"],
-        severity=info["severity"],
-        symptoms=info["symptoms"],
-        recommendations="; ".join(info["organic_remedies"] + info["chemical_treatments"][:1]),
+        crop_name=result["crop_name"],
+        disease_name=result["disease_name"],
+        confidence=result["confidence"],
+        severity=result["severity"],
+        symptoms=result["symptoms"],
+        recommendations="; ".join(result["organic_remedies"][:2] + result["chemical_treatments"][:1]),
     )
     db.add(scan_record)
     db.commit()
 
-    return schemas.DiseaseScanResponse(
-        crop_name=info["crop_name"],
-        disease_name=info["disease_name"],
-        confidence=info["confidence"],
-        severity=info["severity"],
-        is_uncertain=info["is_uncertain"],
-        symptoms=info["symptoms"],
-        organic_remedies=info["organic_remedies"],
-        chemical_treatments=info["chemical_treatments"],
-        guidance_notes=info["guidance_notes"],
-        source_citation=info["source_citation"],
-        disclaimer=DISCLAIMER_DISEASE,
+    return schemas.DiseaseScanResponse(**result)
+
+
+@router.post("/train-model", response_model=schemas.ModelTrainResponse)
+def train_crop_disease_model(user: models.User = Depends(current_user)):
+    summary = crop_vision_rag.train_and_export_model()
+    return schemas.ModelTrainResponse(
+        status="success",
+        model_name=summary["metadata"]["model_name"],
+        version=summary["metadata"]["version"],
+        training_samples=summary["metadata"]["training_samples"],
+        classes_trained=len(summary["classes"]),
+        accuracy_percent=summary["metadata"]["evaluation_accuracy_percent"],
+        trained_at=summary["metadata"]["trained_at"],
+        feature_keys=summary["metadata"]["feature_keys"],
+        message=(
+            f"Model {summary['metadata']['model_name']} v{summary['metadata']['version']} "
+            f"successfully trained with {summary['metadata']['training_samples']} samples "
+            f"across {len(summary['classes'])} classes ({summary['metadata']['evaluation_accuracy_percent']}% accuracy)."
+        ),
     )
+
+
+@router.get("/model-info", response_model=schemas.ModelInfoResponse)
+def get_model_info():
+    info = crop_vision_rag.get_model_metadata()
+    return schemas.ModelInfoResponse(**info)
 
 
 @router.get("/scan-history", response_model=list[schemas.DiseaseScanHistoryOut])

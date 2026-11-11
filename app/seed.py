@@ -165,14 +165,6 @@ def seed_demo_data(db: Session) -> dict:
             type="SYSTEM",
         ))
 
-    if g_user and not db.scalar(select(models.Notification).where(models.Notification.user_id == g_user.id)):
-        db.add(models.Notification(
-            user_id=g_user.id,
-            title="Welcome Guravaiah Katta!",
-            message="Your farm 'Sri Venkateswara Agro Farm' is registered and ready for job postings.",
-            type="SYSTEM",
-        ))
-
     db.commit()
 
     return {
@@ -180,5 +172,4 @@ def seed_demo_data(db: Session) -> dict:
         "farmer": {"user_id": farmer.id, "name": farmer.name, "email": farmer_email, "role": "FARMER", "token": create_token(farmer)},
         "worker": {"user_id": worker.id, "name": worker.name, "email": worker_email, "role": "WORKER", "token": create_token(worker)},
         "hybrid": {"user_id": hybrid.id, "name": hybrid.name, "email": hybrid_email, "role": "HYBRID", "token": create_token(hybrid)},
-        "user": {"user_id": g_user.id, "name": g_user.name, "email": g_user.email, "role": g_user.role, "token": create_token(g_user)},
     }

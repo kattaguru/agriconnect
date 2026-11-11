@@ -16,8 +16,14 @@ import {
 import { api } from '../api';
 import { Job, Booking, WorkerProfile } from '../types';
 import { ReviewModal } from './ReviewModal';
+import { Language, getT } from '../i18n';
 
-export const MarketplaceWorker: React.FC = () => {
+interface MarketplaceWorkerProps {
+  lang?: Language;
+}
+
+export const MarketplaceWorker: React.FC<MarketplaceWorkerProps> = ({ lang = 'en' }) => {
+  const t = getT(lang);
   const [profile, setProfile] = useState<WorkerProfile | null>(null);
   const [nearbyJobs, setNearbyJobs] = useState<Job[]>([]);
   const [myBookings, setMyBookings] = useState<Booking[]>([]);
@@ -193,9 +199,9 @@ export const MarketplaceWorker: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h2 style={{ fontSize: '1.6rem', color: '#f8fafc' }}>Worker Hub & Nearby Jobs</h2>
+          <h2 style={{ fontSize: '1.6rem', color: '#f8fafc' }}>{t('workerDashboardTitle')}</h2>
           <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-            Discover agricultural work around you, track confirmed bookings, and build reputation
+            {t('workerDashboardSubtitle')}
           </p>
         </div>
         {profile && (
@@ -212,7 +218,7 @@ export const MarketplaceWorker: React.FC = () => {
                 background: profile.available ? '#4ade80' : '#64748b',
               }}
             />
-            Status: {profile.available ? 'Available for Work' : 'Busy / Unavailable'}
+            {profile.available ? t('availableForWorkToggle') : 'Unavailable'}
           </button>
         )}
       </div>
@@ -230,14 +236,14 @@ export const MarketplaceWorker: React.FC = () => {
               </div>
               <p style={{ color: '#94a3b8', fontSize: '0.86rem', marginTop: 4 }}>
                 📍 Base Location: {profile.latitude?.toFixed(2) || '13.65'}°N,{' '}
-                {profile.longitude?.toFixed(2) || '79.42'}°E (Tirupati Region) | Experience:{' '}
-                <strong style={{ color: '#f8fafc' }}>{profile.experience_years} Years</strong>
+                {profile.longitude?.toFixed(2) || '79.42'}°E | {t('experienceYears')}:{' '}
+                <strong style={{ color: '#f8fafc' }}>{profile.experience_years} {t('yearsExp')}</strong>
               </p>
 
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
                 {profile.skills.length === 0 ? (
                   <span style={{ fontSize: '0.82rem', color: '#fbbf24', background: 'rgba(245, 158, 11, 0.1)', padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(245, 158, 11, 0.25)' }}>
-                    ⚡ No skills added yet. Click "Edit Skills" to add your agricultural specialties (e.g. harvesting, weeding, ploughing).
+                    ⚡ No skills added yet. Click "Edit Skills" to add your agricultural specialties.
                   </span>
                 ) : (
                   profile.skills.map((s, idx) => (
@@ -263,12 +269,12 @@ export const MarketplaceWorker: React.FC = () => {
                   <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>/5</span>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                  {profile.review_count} Verified Review{profile.review_count !== 1 ? 's' : ''}
+                  {profile.review_count} Verified Reviews
                 </div>
               </div>
 
               <button onClick={() => setShowEditProfile(true)} className="btn-secondary btn-sm">
-                <Edit3 size={15} /> Edit Skills
+                <Edit3 size={15} /> {t('editProfileBtn')}
               </button>
             </div>
           </div>
@@ -280,7 +286,7 @@ export const MarketplaceWorker: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 18 }}>
           <div>
             <h3 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Compass size={20} color="#22c55e" /> Open Farm Jobs Nearby ({nearbyJobs.length})
+              <Compass size={20} color="#22c55e" /> {t('workerDashboardTitle')} ({nearbyJobs.length})
             </h3>
             <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
               Ranked nearest to your location using Haversine great-circle distance
@@ -290,7 +296,7 @@ export const MarketplaceWorker: React.FC = () => {
           {/* Filters */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Radius:</span>
+              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{t('filterByRadius')}:</span>
               <input
                 type="range"
                 min="5"
@@ -306,14 +312,14 @@ export const MarketplaceWorker: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Skill:</span>
+              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{t('filterBySkill')}:</span>
               <select
                 className="form-select"
                 style={{ padding: '6px 12px', fontSize: '0.85rem', width: 'auto' }}
                 value={filterSkill}
                 onChange={(e) => setFilterSkill(e.target.value)}
               >
-                <option value="">All Skills</option>
+                <option value="">{t('allSkills')}</option>
                 <option value="harvesting">Harvesting</option>
                 <option value="weeding">Weeding</option>
                 <option value="ploughing">Ploughing</option>
@@ -329,7 +335,7 @@ export const MarketplaceWorker: React.FC = () => {
               title="Detect real-time GPS location from your device"
             >
               <Navigation size={14} />
-              <span>{detectingGps ? 'Querying GPS...' : '📍 Detect Live GPS'}</span>
+              <span>{detectingGps ? 'Querying GPS...' : t('autoDetectWorkerLocation')}</span>
             </button>
           </div>
         </div>
@@ -366,9 +372,9 @@ export const MarketplaceWorker: React.FC = () => {
                   </div>
 
                   <p style={{ color: '#94a3b8', fontSize: '0.86rem', marginTop: 4 }}>
-                    Farm: <strong style={{ color: '#cbd5e1' }}>{j.farm_name}</strong> | Start:{' '}
-                    <strong style={{ color: '#cbd5e1' }}>{j.start_date}</strong> ({j.duration_days} days) | Needed:{' '}
-                    <strong style={{ color: '#cbd5e1' }}>{j.workers_required} workers</strong>
+                    Farm: <strong style={{ color: '#cbd5e1' }}>{j.farm_name}</strong> | {t('startDateLabel')}:{' '}
+                    <strong style={{ color: '#cbd5e1' }}>{j.start_date}</strong> ({j.duration_days} {t('days')}) | Needed:{' '}
+                    <strong style={{ color: '#cbd5e1' }}>{j.workers_required} {t('workersNeeded')}</strong>
                   </p>
 
                   <div style={{ marginTop: 6 }}>
@@ -381,7 +387,7 @@ export const MarketplaceWorker: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#4ade80' }}>
-                      ₹{j.wage_per_day} <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>/day</span>
+                      ₹{j.wage_per_day} <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t('perDay')}</span>
                     </div>
                     <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
                       Total pay ~₹{j.wage_per_day * j.duration_days}
@@ -394,7 +400,7 @@ export const MarketplaceWorker: React.FC = () => {
                     style={{ minWidth: '120px' }}
                     disabled={applyingJobId === j.id}
                   >
-                    <Send size={16} /> {applyingJobId === j.id ? 'Applying...' : 'Apply Now'}
+                    <Send size={16} /> {applyingJobId === j.id ? 'Applying...' : t('applyJobBtn')}
                   </button>
                 </div>
               </div>
@@ -406,12 +412,12 @@ export const MarketplaceWorker: React.FC = () => {
       {/* My Bookings Section */}
       <div className="glass-panel" style={{ padding: '20px 24px' }}>
         <h3 style={{ fontSize: '1.15rem', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Briefcase size={20} color="#0ea5e9" /> My Assigned Bookings & Work History ({myBookings.length})
+          <Briefcase size={20} color="#0ea5e9" /> {t('myApplicationsTitle')} ({myBookings.length})
         </h3>
 
         {myBookings.length === 0 ? (
           <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-            You haven't been assigned to any jobs yet. Apply to jobs above to get hired!
+            {t('noApplicationsYet')}
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -450,7 +456,7 @@ export const MarketplaceWorker: React.FC = () => {
                       className="btn-sm btn-secondary"
                       style={{ color: '#fbbf24' }}
                     >
-                      <Star size={15} /> Rate Farmer
+                      <Star size={15} /> {t('rateWorkerBtn')}
                     </button>
                   )}
                   {b.status === 'CONFIRMED' && (
@@ -469,7 +475,7 @@ export const MarketplaceWorker: React.FC = () => {
       {showEditProfile && (
         <div className="modal-backdrop">
           <div className="modal-content" style={{ maxWidth: '480px' }}>
-            <h3 style={{ fontSize: '1.3rem', marginBottom: 14 }}>Update Worker Profile</h3>
+            <h3 style={{ fontSize: '1.3rem', marginBottom: 14 }}>{t('workerProfileTitle')}</h3>
 
             {profileError && (
               <div
@@ -489,7 +495,7 @@ export const MarketplaceWorker: React.FC = () => {
 
             <form onSubmit={handleUpdateProfile}>
               <div className="form-group">
-                <label className="form-label">Skills (comma-separated)</label>
+                <label className="form-label">{t('skills')}</label>
                 <input
                   type="text"
                   required
@@ -509,13 +515,13 @@ export const MarketplaceWorker: React.FC = () => {
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: '0.85rem', borderColor: '#22c55e', color: '#86efac' }}
                 >
                   <Navigation size={15} />
-                  <span>{detectingGps ? 'Querying Satellite GPS...' : '📍 Auto-Detect Base Coordinates via Device GPS'}</span>
+                  <span>{detectingGps ? 'Querying Satellite GPS...' : t('autoDetectWorkerLocation')}</span>
                 </button>
               </div>
 
               <div className="grid-cols-3">
                 <div className="form-group">
-                  <label className="form-label">Experience (Yrs)</label>
+                  <label className="form-label">{t('experienceYears')}</label>
                   <input
                     type="number"
                     min="0"
@@ -558,7 +564,7 @@ export const MarketplaceWorker: React.FC = () => {
                     onChange={(e) => setIsAvail(e.target.checked)}
                     style={{ width: 18, height: 18, accentColor: '#22c55e' }}
                   />
-                  <span>Mark as available for matching & new bookings</span>
+                  <span>{t('availableForWorkToggle')}</span>
                 </label>
               </div>
 
@@ -572,10 +578,10 @@ export const MarketplaceWorker: React.FC = () => {
                   }}
                   disabled={isSavingProfile}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button type="submit" className="btn-primary" disabled={isSavingProfile}>
-                  {isSavingProfile ? 'Saving Changes...' : 'Save Changes'}
+                  {isSavingProfile ? 'Saving Changes...' : t('save')}
                 </button>
               </div>
             </form>
@@ -590,6 +596,7 @@ export const MarketplaceWorker: React.FC = () => {
           bookingId={reviewBooking.id}
           workType={reviewBooking.work_type}
           partnerName="Farmer"
+          lang={lang}
           onClose={() => setReviewBooking(null)}
           onSuccess={() => {
             fetchData();

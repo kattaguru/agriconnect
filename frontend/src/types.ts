@@ -129,6 +129,13 @@ export interface CropRecommendationOut {
   disclaimer: string;
 }
 
+export interface DifferentialDiagnosis {
+  disease_id: string;
+  disease_name: string;
+  crop: string;
+  similarity_score: number;
+}
+
 export interface DiseaseScanResponse {
   crop_name: string;
   disease_name: string;
@@ -141,6 +148,48 @@ export interface DiseaseScanResponse {
   guidance_notes: string;
   source_citation: string;
   disclaimer: string;
+  differential_diagnoses?: DifferentialDiagnosis[];
+  visual_metrics?: {
+    chlorosis_percent?: number;
+    necrosis_percent?: number;
+    healthy_tissue_percent?: number;
+    dominant_hue?: number;
+    sample_preset?: string;
+    crop_heuristic?: string;
+    [key: string]: any;
+  };
+  model_version?: string;
+}
+
+export interface ModelClassInfo {
+  id: string;
+  crop: string;
+  disease_name: string;
+  severity: string;
+  symptoms: string;
+}
+
+export interface ModelInfoResponse {
+  model_name: string;
+  version: string;
+  trained_at: string;
+  training_samples: number;
+  accuracy_percent: number;
+  feature_keys: string[];
+  classes: ModelClassInfo[];
+  authoritative_sources: string[];
+}
+
+export interface ModelTrainResponse {
+  status: string;
+  model_name: string;
+  version: string;
+  training_samples: number;
+  classes_trained: number;
+  accuracy_percent: number;
+  trained_at: string;
+  feature_keys: string[];
+  message: string;
 }
 
 export interface RagSourceDoc {

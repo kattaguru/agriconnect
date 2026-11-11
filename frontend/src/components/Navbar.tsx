@@ -84,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               Agri<span style={{ color: '#4ade80' }}>Connect</span>
             </h1>
             <span style={{ fontSize: '0.72rem', color: '#94a3b8', letterSpacing: '0.03em' }}>
-              Agricultural Workforce & Intelligence
+              {t.brandSub}
             </span>
           </div>
         </div>
@@ -235,14 +235,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                     >
                       {currentUser.role === 'HYBRID'
-                        ? '👨‍🌾👷 HYBRID (Farmer + Worker)'
+                        ? `👨‍🌾👷 ${t.hybridRole}`
                         : currentUser.role === 'FARMER'
-                        ? '👨‍🌾 FARMER (Farmer Only)'
+                        ? `👨‍🌾 ${t.farmerRole}`
                         : currentUser.role === 'WORKER'
-                        ? '👷 WORKER (Worker Only)'
+                        ? `👷 ${t.workerRole}`
                         : currentUser.role}
                       {currentUser.role !== 'ADMIN' && (
-                        <span style={{ opacity: 0.75, fontSize: '0.62rem', marginLeft: 2 }}>⇄ Switch</span>
+                        <span style={{ opacity: 0.75, fontSize: '0.62rem', marginLeft: 2 }}>{t.switchBtn}</span>
                       )}
                     </span>
                   </button>
@@ -253,7 +253,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={onLogout}
                 className="btn-secondary btn-sm"
                 style={{ padding: '6px 10px', color: '#f87171' }}
-                title="Log Out of My Space"
+                title={t.signOutTitle}
               >
                 <LogOut size={16} />
               </button>
@@ -265,7 +265,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               style={{ gap: 6, padding: '8px 14px', fontSize: '0.84rem' }}
             >
               <UserIcon size={15} />
-              <span>Sign In / Join</span>
+              <span>{t.signInJoinBtn}</span>
             </button>
           )}
         </div>

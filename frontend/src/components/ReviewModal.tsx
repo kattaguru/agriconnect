@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Star, X } from 'lucide-react';
 import { api } from '../api';
+import { Language, getT } from '../i18n';
 
 interface ReviewModalProps {
   bookingId: number;
@@ -9,6 +10,7 @@ interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  lang?: Language;
 }
 
 export const ReviewModal: React.FC<ReviewModalProps> = ({
@@ -18,7 +20,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  lang = 'en',
 }) => {
+  const t = getT(lang);
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -56,7 +60,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           <X size={22} />
         </button>
 
-        <h3 style={{ fontSize: '1.35rem', marginBottom: 8 }}>Rate & Review</h3>
+        <h3 style={{ fontSize: '1.35rem', marginBottom: 8 }}>{t('rateAndReviewTitle')}</h3>
         <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: 20 }}>
           Work: <strong style={{ color: '#f8fafc' }}>{workType}</strong> with <strong style={{ color: '#f8fafc' }}>{partnerName}</strong>
         </p>
@@ -89,7 +93,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Feedback Comments (Optional)</label>
+            <label className="form-label">{t('feedbackComments')}</label>
             <textarea
               className="form-textarea"
               rows={3}
@@ -101,10 +105,10 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
             <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
-              Cancel
+              {t('cancel')}
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Submitting...' : 'Submit Rating'}
+              {loading ? t('submittingRating') : t('submitRating')}
             </button>
           </div>
         </form>

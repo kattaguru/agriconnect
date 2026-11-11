@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from . import models
+from .. import models
+from . import crop_vision_rag
 
 
 def create_notification(
@@ -37,3 +38,6 @@ def record_audit(
     )
     db.add(log)
     return log
+
+
+__all__ = ["create_notification", "record_audit", "crop_vision_rag"]

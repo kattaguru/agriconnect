@@ -17,6 +17,8 @@ import {
   UserAdmin,
   WorkerProfile,
   Role,
+  ModelInfoResponse,
+  ModelTrainResponse,
 } from './types';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || '/api';
@@ -196,6 +198,8 @@ export const api = {
     scanDisease: (body: { crop_name: string; sample_id?: string; image_base64?: string }) =>
       request<DiseaseScanResponse>('/intelligence/disease-scan', { method: 'POST', body: JSON.stringify(body) }),
     getScanHistory: () => request<any[]>('/intelligence/scan-history'),
+    getModelInfo: () => request<ModelInfoResponse>('/intelligence/model-info'),
+    trainModel: () => request<ModelTrainResponse>('/intelligence/train-model', { method: 'POST' }),
     queryRag: (body: { question: string; crop?: string }) =>
       request<RagQueryResponse>('/intelligence/rag-query', { method: 'POST', body: JSON.stringify(body) }),
     getMarketPrices: (crop?: string, district?: string) => {

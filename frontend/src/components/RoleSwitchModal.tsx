@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { X, Check, Sprout, Briefcase, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
 import { Role, User } from '../types';
 import { api } from '../api';
+import { Language, getT } from '../i18n';
 
 interface RoleSwitchModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: User | null;
   onRoleUpdated: (updatedUser: User) => void;
+  lang?: Language;
 }
 
 export const RoleSwitchModal: React.FC<RoleSwitchModalProps> = ({
@@ -15,7 +17,9 @@ export const RoleSwitchModal: React.FC<RoleSwitchModalProps> = ({
   onClose,
   currentUser,
   onRoleUpdated,
+  lang = 'en',
 }) => {
+  const t = getT(lang);
   const [selectedRole, setSelectedRole] = useState<Role>(currentUser?.role || 'FARMER');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -86,11 +90,11 @@ export const RoleSwitchModal: React.FC<RoleSwitchModalProps> = ({
                 <Sparkles size={18} color="#60a5fa" />
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
-                Select Workspace Role
+                {t('selectRoleTitle')}
               </h3>
             </div>
             <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0 }}>
-              Choose your profile capability: Only Farmer, Only Worker, or Hybrid (Both).
+              {t('chooseCapabilityDesc')}
             </p>
           </div>
 
@@ -289,7 +293,7 @@ export const RoleSwitchModal: React.FC<RoleSwitchModalProps> = ({
             className="btn-secondary"
             style={{ padding: '10px 18px', fontSize: '0.88rem' }}
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             type="button"
@@ -306,7 +310,7 @@ export const RoleSwitchModal: React.FC<RoleSwitchModalProps> = ({
             }}
           >
             {loading ? <RefreshCw className="spin" size={16} /> : null}
-            <span>{loading ? 'Updating...' : 'Save & Switch Role'}</span>
+            <span>{loading ? t('savingRole') : t('saveRoleBtn')}</span>
           </button>
         </div>
       </div>

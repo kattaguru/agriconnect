@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -341,6 +341,13 @@ class DiseaseScanRequest(BaseModel):
     sample_id: str | None = None
 
 
+class DifferentialDiagnosis(BaseModel):
+    disease_id: str
+    disease_name: str
+    crop: str
+    similarity_score: float
+
+
 class DiseaseScanResponse(BaseModel):
     crop_name: str
     disease_name: str
@@ -353,6 +360,40 @@ class DiseaseScanResponse(BaseModel):
     guidance_notes: str
     source_citation: str
     disclaimer: str
+    differential_diagnoses: list[DifferentialDiagnosis] | None = None
+    visual_metrics: dict[str, Any] | None = None
+    model_version: str | None = None
+
+
+class ModelTrainResponse(BaseModel):
+    status: str
+    model_name: str
+    version: str
+    training_samples: int
+    classes_trained: int
+    accuracy_percent: float
+    trained_at: str
+    feature_keys: list[str]
+    message: str
+
+
+class ModelClassInfo(BaseModel):
+    id: str
+    crop: str
+    disease_name: str
+    severity: str
+    symptoms: str
+
+
+class ModelInfoResponse(BaseModel):
+    model_name: str
+    version: str
+    trained_at: str
+    training_samples: int
+    accuracy_percent: float
+    feature_keys: list[str]
+    classes: list[ModelClassInfo]
+    authoritative_sources: list[str]
 
 
 class DiseaseScanHistoryOut(BaseModel):

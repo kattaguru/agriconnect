@@ -92,3 +92,69 @@ def test_market_prices_and_comparison(client):
     comp = comp_res.json()
     assert len(comp["options"]) >= 2
     assert any(opt["is_best"] for opt in comp["options"])
+
+
+def test_disease_scanner_with_image_and_differential(client):
+    import base64
+    import io
+    from PIL import Image
+
+    r = client.post("/api/auth/register", json={
+        "name": "Vision Farmer", "email": "vision@example.com", "password": "password123", "role": "FARMER"
+    })
+    headers = {"Authorization": f"Bearer {r.json()['token']}"}
+
+    # Generate small synthetic test image (e.g. 64x64 with yellowish/brown lesion on green leaf)
+    img = Image.new("RGB", (64, 64), color=(34, 139, 34))  # Forest green
+    # Add yellowish chlorotic spot
+    for x in range(20, 45):
+        for y in range(20, 45):
+            img.putpixel((x, y), (218, 165, 32))  # Goldenrod yellow chlorosis
+    # Add dark necrotic center
+    for x in range(28, 36):
+        for y in range(28, 36):
+            img.putpixel((x, y), (80, 40, 20))  # Dark brown necrotic spot
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    b64_str = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+    res = client.post("/api/intelligence/disease-scan", json={
+        "crop_name": "Groundnut",
+        "image_base64": f"data:image/png;base64,{b64_str}",
+    }, headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert "disease_name" in data
+    assert data["confidence"] > 0.70
+    assert "differential_diagnoses" in data
+    assert len(data["differential_diagnoses"]) >= 2
+    assert "visual_metrics" in data
+    assert data["visual_metrics"]["chlorosis_percent"] > 0
+    assert len(data["organic_remedies"]) > 0
+    assert len(data["chemical_treatments"]) > 0
+
+
+def test_model_training_and_info(client):
+    r = client.post("/api/auth/register", json={
+        "name": "Admin Model", "email": "adminmodel@example.com", "password": "password123", "role": "FARMER"
+    })
+    headers = {"Authorization": f"Bearer {r.json()['token']}"}
+
+    # Get model info
+    info_res = client.get("/api/intelligence/model-info")
+    assert info_res.status_code == 200
+    info = info_res.json()
+    assert "AgriConnect" in info["model_name"]
+    assert len(info["classes"]) >= 7
+    assert info["accuracy_percent"] >= 95.0
+
+    # Trigger re-train
+    train_res = client.post("/api/intelligence/train-model", headers=headers)
+    assert train_res.status_code == 200
+    train_data = train_res.json()
+    assert train_data["status"] == "success"
+    assert train_data["training_samples"] >= 1400
+    assert train_data["classes_trained"] >= 7
+    assert train_data["accuracy_percent"] >= 95.0
+

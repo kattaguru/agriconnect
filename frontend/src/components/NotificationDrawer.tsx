@@ -2,12 +2,14 @@ import React from 'react';
 import { Bell, CheckCheck, X, Calendar, UserCheck, AlertCircle, Briefcase, MapPin } from 'lucide-react';
 import { Notification } from '../types';
 import { api } from '../api';
+import { Language, getT } from '../i18n';
 
 interface NotificationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   notifications: Notification[];
   onRefresh: () => void;
+  lang?: Language;
 }
 
 export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
@@ -15,7 +17,9 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   onClose,
   notifications,
   onRefresh,
+  lang = 'en',
 }) => {
+  const t = getT(lang);
   if (!isOpen) return null;
 
   const handleMarkAllRead = async () => {
@@ -80,7 +84,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Bell size={20} color="#22c55e" />
-            <h3 style={{ fontSize: '1.2rem' }}>Notifications</h3>
+            <h3 style={{ fontSize: '1.2rem' }}>{t('notifications')}</h3>
           </div>
           <button
             onClick={onClose}
@@ -96,7 +100,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             className="btn-secondary btn-sm"
             style={{ fontSize: '0.8rem', padding: '4px 10px' }}
           >
-            <CheckCheck size={14} /> Mark all read
+            <CheckCheck size={14} /> {t('markAllRead')}
           </button>
         </div>
 
@@ -104,7 +108,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
           {notifications.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#64748b', marginTop: 60 }}>
               <Bell size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-              <p>No notifications yet</p>
+              <p>{t('noNotifications')}</p>
             </div>
           ) : (
             notifications.map((n) => (

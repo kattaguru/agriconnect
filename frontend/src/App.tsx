@@ -9,7 +9,7 @@ import { NotificationDrawer } from './components/NotificationDrawer';
 import { AuthModal } from './components/AuthModal';
 import { RoleSwitchModal } from './components/RoleSwitchModal';
 import { QuickDemoBar } from './components/QuickDemoBar';
-import { Language } from './i18n';
+import { Language, getT } from './i18n';
 import { User, Notification, Role } from './types';
 import { api } from './api';
 import { supabase } from './supabase';
@@ -19,6 +19,8 @@ export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<'marketplace' | 'simulator' | 'farmAi' | 'admin'>('marketplace');
   const [hybridSubTab, setHybridSubTab] = useState<'farmer' | 'worker'>('farmer');
   const [lang, setLang] = useState<Language>('en');
+
+  const t = getT(lang);
 
   // Modals & Panels
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -174,14 +176,20 @@ export const App: React.FC = () => {
     setShowAuthModal(true);
   };
 
+  const isDemoModeRequested =
+    typeof window !== 'undefined' &&
+    (window.location.search.includes('demo=true') || window.location.hash.includes('demo'));
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* 1-Click Evaluation Persona Switcher */}
-      <QuickDemoBar
-        onSelectUser={handleSelectUser}
-        onOpenAuth={() => setShowAuthModal(true)}
-        currentUser={currentUser}
-      />
+      {/* 1-Click Evaluation Persona Switcher: Only displayed if explicitly requested (?demo=true) */}
+      {isDemoModeRequested && (
+        <QuickDemoBar
+          onSelectUser={handleSelectUser}
+          onOpenAuth={() => setShowAuthModal(true)}
+          currentUser={currentUser}
+        />
+      )}
 
       {/* Main Sticky Navbar */}
       <Navbar
@@ -225,10 +233,10 @@ export const App: React.FC = () => {
                     <span style={{ fontSize: '1.4rem' }}>🔄</span>
                     <div>
                       <div style={{ fontWeight: 700, color: '#f8fafc', fontSize: '0.94rem' }}>
-                        Dual-Mode Workspace (Farmer & Worker)
+                        {t('dualModeTitle')}
                       </div>
                       <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: 2 }}>
-                        You have full privileges to both hire agricultural labor and apply for local farm work.
+                        {t('dualModeDesc')}
                       </div>
                     </div>
                   </div>
@@ -260,7 +268,7 @@ export const App: React.FC = () => {
                       }}
                     >
                       <span>👨‍🌾</span>
-                      <span>Farmer Operations (My Farms & Jobs)</span>
+                      <span>{t('farmerOperationsTab')}</span>
                     </button>
                     <button
                       onClick={() => setHybridSubTab('worker')}
@@ -280,21 +288,21 @@ export const App: React.FC = () => {
                       }}
                     >
                       <span>👷</span>
-                      <span>Worker Marketplace (Find Work & Apply)</span>
+                      <span>{t('workerMarketplaceTab')}</span>
                     </button>
                   </div>
                 </div>
 
                 {hybridSubTab === 'farmer' ? (
-                  <MarketplaceFarmer key={`hybrid-farmer-${currentUser.id}-${currentUser.token}`} />
+                  <MarketplaceFarmer key={`hybrid-farmer-${currentUser.id}-${currentUser.token}`} lang={lang} />
                 ) : (
-                  <MarketplaceWorker key={`hybrid-worker-${currentUser.id}-${currentUser.token}`} />
+                  <MarketplaceWorker key={`hybrid-worker-${currentUser.id}-${currentUser.token}`} lang={lang} />
                 )}
               </div>
             ) : currentUser.role === 'WORKER' ? (
-              <MarketplaceWorker key={`worker-${currentUser.id}-${currentUser.token}`} />
+              <MarketplaceWorker key={`worker-${currentUser.id}-${currentUser.token}`} lang={lang} />
             ) : (
-              <MarketplaceFarmer key={`farmer-${currentUser.id}-${currentUser.token}`} />
+              <MarketplaceFarmer key={`farmer-${currentUser.id}-${currentUser.token}`} lang={lang} />
             )
           ) : (
             <div
@@ -324,25 +332,25 @@ export const App: React.FC = () => {
                 <span style={{ fontSize: '1.8rem' }}>🌾</span>
               </div>
               <h2 style={{ fontSize: '1.6rem', color: '#f8fafc', marginBottom: 8 }}>
-                Welcome to AgriConnect Marketplace
+                {t('welcomeMarketplace')}
               </h2>
               <p style={{ color: '#94a3b8', fontSize: '0.94rem', marginBottom: 24, lineHeight: 1.5 }}>
-                Connect with verified farm workers or post agricultural labor requirements. Sign in with your Google account or 10-digit mobile number to enter your personal space.
+                {t('welcomeMarketplaceDesc')}
               </p>
               <button
                 onClick={() => setShowAuthModal(true)}
                 className="btn-primary"
                 style={{ padding: '12px 28px', fontSize: '0.98rem', fontWeight: 600 }}
               >
-                Sign In with Google or Mobile
+                {t('signInWithGoogle')}
               </button>
             </div>
           )
         )}
 
-        {currentTab === 'simulator' && <ProfitSimulatorScreen />}
+        {currentTab === 'simulator' && <ProfitSimulatorScreen lang={lang} />}
 
-        {currentTab === 'farmAi' && <FarmAiHub />}
+        {currentTab === 'farmAi' && <FarmAiHub lang={lang} />}
 
         {currentTab === 'admin' && <AdminPortal />}
       </main>
@@ -353,6 +361,7 @@ export const App: React.FC = () => {
         onClose={() => setShowNotifications(false)}
         notifications={notifications}
         onRefresh={fetchNotifications}
+        lang={lang}
       />
 
       {/* Login & Register Modal */}
@@ -370,6 +379,7 @@ export const App: React.FC = () => {
         isOpen={showRoleSwitchModal}
         onClose={() => setShowRoleSwitchModal(false)}
         currentUser={currentUser}
+        lang={lang}
         onRoleUpdated={(updated) => {
           setCurrentUser(updated);
           if (updated.role === 'WORKER') {

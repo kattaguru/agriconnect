@@ -29,35 +29,14 @@ export const App: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Initialize user session from localStorage ONLY (no hardcoded demo fallback)
+  // Initialize user session from localStorage or active Supabase OAuth callback
   useEffect(() => {
-    const initUser = async () => {
-      try {
-        const savedUserStr = localStorage.getItem('agriconnect_user');
-        const savedToken = localStorage.getItem('agriconnect_token');
-        if (savedUserStr && savedToken) {
-          const parsed = JSON.parse(savedUserStr);
-          setCurrentUser({ ...parsed, token: savedToken });
-          return;
-        }
-        // No saved user -> clean state, open auth modal for live sign-in
-        setCurrentUser(null);
-        setShowAuthModal(true);
-      } catch (err) {
-        console.error('Initialization error:', err);
-        setCurrentUser(null);
-        setShowAuthModal(true);
-      }
-    };
-    initUser();
-  }, []);
+    let isMounted = true;
 
-  // Listen for Supabase OAuth callbacks (e.g. Google Sign-In redirect or page refresh)
-  useEffect(() => {
     const syncSupabaseSession = async (session: any) => {
-      if (!session?.user) return;
+      if (!session?.user) return false;
       const email = session.user.email;
-      if (!email) return;
+      if (!email) return false;
 
       const fullName =
         session.user.user_metadata?.full_name ||
@@ -84,26 +63,80 @@ export const App: React.FC = () => {
         };
         localStorage.setItem('agriconnect_token', res.token);
         localStorage.setItem('agriconnect_user', JSON.stringify(userObj));
-        setCurrentUser(userObj);
-        setShowAuthModal(false);
+        if (isMounted) {
+          setCurrentUser(userObj);
+          setShowAuthModal(false);
+        }
 
         if (window.location.hash || window.location.search.includes('code=')) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
-      } catch (err) {
+        return true;
+      } catch (err: any) {
         console.error('Failed to sync OAuth user:', err);
+        return false;
       }
     };
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-        await syncSupabaseSession(session);
-      } else if (event === 'INITIAL_SESSION' && session?.user) {
-        // If we have a Supabase user but no valid local backend token, sync now
-        const savedToken = localStorage.getItem('agriconnect_token');
-        if (!savedToken) {
-          await syncSupabaseSession(session);
+    const initAuth = async () => {
+      // 1. Check if URL contains an OAuth error from Google/Supabase
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlError =
+        hashParams.get('error_description') ||
+        searchParams.get('error_description') ||
+        hashParams.get('error');
+      if (urlError) {
+        console.warn('OAuth redirect error detected:', urlError);
+        alert(`Google Sign-In notice: ${decodeURIComponent(urlError)}`);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        if (isMounted) {
+          setShowAuthModal(true);
         }
+        return;
+      }
+
+      // 2. Check if we already have a saved user in localStorage
+      const savedUserStr = localStorage.getItem('agriconnect_user');
+      const savedToken = localStorage.getItem('agriconnect_token');
+      if (savedUserStr && savedToken) {
+        try {
+          const parsed = JSON.parse(savedUserStr);
+          if (isMounted) {
+            setCurrentUser({ ...parsed, token: savedToken });
+            setShowAuthModal(false);
+          }
+          return;
+        } catch {
+          localStorage.removeItem('agriconnect_user');
+          localStorage.removeItem('agriconnect_token');
+        }
+      }
+
+      // 3. Check if Supabase has an active session from an OAuth redirect
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const synced = await syncSupabaseSession(session);
+          if (synced) return;
+        }
+      } catch (err) {
+        console.warn('Supabase getSession check failed:', err);
+      }
+
+      // 4. If still not logged in, open Auth Modal
+      if (isMounted) {
+        setCurrentUser(null);
+        setShowAuthModal(true);
+      }
+    };
+
+    initAuth();
+
+    // Listen for runtime auth state events (e.g. background sign-in or session changes)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+        await syncSupabaseSession(session);
       }
     });
 
@@ -112,14 +145,17 @@ export const App: React.FC = () => {
       if (session?.user) {
         await syncSupabaseSession(session);
       } else {
-        setCurrentUser(null);
-        setShowAuthModal(true);
+        if (isMounted) {
+          setCurrentUser(null);
+          setShowAuthModal(true);
+        }
       }
     };
 
     window.addEventListener('agriconnect_session_expired', handleSessionExpired);
 
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
       window.removeEventListener('agriconnect_session_expired', handleSessionExpired);
     };

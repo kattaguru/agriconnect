@@ -100,16 +100,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
   // 1. Google OAuth Flow
   const handleGoogleSignIn = async () => {
+    if (googleLoading) return;
     setGoogleLoading(true);
     setError('');
     setInfoNotice('');
 
     try {
       localStorage.setItem('agriconnect_oauth_intent_role', role);
+      // Clear any stale local auth state before starting fresh handshake
+      await supabase.auth.signOut().catch(() => {});
+
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
+          queryParams: {
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
         },
       });
 

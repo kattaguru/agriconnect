@@ -564,6 +564,8 @@ def map_crop_to_cropdiseaseai(crop_name: str) -> str | None:
         return "paddy"
     if any(k in c for k in ["maize", "corn", "rust"]):
         return "maize"
+    if any(k in c for k in ["chilli", "chili", "pepper"]):
+        return "chilli"
     return None
 
 
@@ -818,7 +820,7 @@ def analyze_crop_image(
         "visual_metrics": metrics,
         "model_version": (
             "CropDiseaseAI Deep Learning (Profile Preset)"
-            if top_id in ("groundnut_tikka", "paddy_blast", "corn_rust")
+            if top_id in ("groundnut_tikka", "paddy_blast", "corn_rust", "chilli_anthracnose")
             else model.get("metadata", {}).get("model_name", "AgriConnect-VisionRAG-v2")
         ),
     }

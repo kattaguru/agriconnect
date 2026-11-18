@@ -344,6 +344,7 @@ def scan_crop_disease(
         crop_name=body.crop_name,
         image_base64=body.image_base64,
         sample_id=body.sample_id,
+        custom_crop_disease_ai_url=body.crop_disease_ai_url,
     )
 
     # Record scan history in DB

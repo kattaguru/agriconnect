@@ -134,7 +134,7 @@ export const App: React.FC = () => {
     initAuth();
 
     // Listen for runtime auth state events (e.g. background sign-in or session changes)
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
         await syncSupabaseSession(session);
       }

@@ -43,6 +43,7 @@ class Settings:
         if os.getenv("SUPABASE_URL")
         else ""
     )
+    crop_disease_ai_url: str = os.getenv("CROP_DISEASE_AI_URL", "http://127.0.0.1:8000")
 
 
 settings = Settings()

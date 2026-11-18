@@ -195,7 +195,7 @@ export const api = {
   // Intelligence
   intelligence: {
     recommendCrops: (body: any) => request<CropRecommendationOut>('/intelligence/crop-recommendation', { method: 'POST', body: JSON.stringify(body) }),
-    scanDisease: (body: { crop_name: string; sample_id?: string; image_base64?: string }) =>
+    scanDisease: (body: { crop_name: string; sample_id?: string; image_base64?: string; crop_disease_ai_url?: string }) =>
       request<DiseaseScanResponse>('/intelligence/disease-scan', { method: 'POST', body: JSON.stringify(body) }),
     getScanHistory: () => request<any[]>('/intelligence/scan-history'),
     getModelInfo: () => request<ModelInfoResponse>('/intelligence/model-info'),

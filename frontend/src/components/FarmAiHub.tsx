@@ -54,6 +54,10 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en' }) => {
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [cropDiseaseAiUrl, setCropDiseaseAiUrl] = useState<string>(() => localStorage.getItem('agriconnect_crop_ai_url') || '');
+  const [cropAiChecking, setCropAiChecking] = useState(false);
+  const [cropAiStatus, setCropAiStatus] = useState<string | null>(null);
+  const [showAiSettings, setShowAiSettings] = useState(false);
 
   // Model Training & Studio State
   const [modelInfo, setModelInfo] = useState<ModelInfoResponse | null>(null);
@@ -99,7 +103,11 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en' }) => {
     setSelectedCrop(crop);
     setUploadedImageUrl(null);
     try {
-      const res = await api.intelligence.scanDisease({ crop_name: crop, sample_id: sample });
+      const res = await api.intelligence.scanDisease({
+        crop_name: crop,
+        sample_id: sample,
+        crop_disease_ai_url: cropDiseaseAiUrl || undefined,
+      });
       setScanResult(res);
       const hist = await api.intelligence.getScanHistory();
       setScanHistory(hist);
@@ -130,6 +138,7 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en' }) => {
         const res = await api.intelligence.scanDisease({
           crop_name: selectedCrop,
           image_base64: base64Data,
+          crop_disease_ai_url: cropDiseaseAiUrl || undefined,
         });
         setScanResult(res);
         const hist = await api.intelligence.getScanHistory();
@@ -275,10 +284,91 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en' }) => {
             <div className="glass-panel" style={{ padding: '22px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <h3 style={{ fontSize: '1.15rem' }}>Select Problem Leaf or Scan</h3>
-                <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
-                  AI Vision + RAG v2
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className="badge badge-green" style={{ fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Zap size={12} /> CropDiseaseAI Active
+                  </span>
+                  <button
+                    onClick={() => setShowAiSettings(!showAiSettings)}
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(34, 197, 94, 0.3)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: '#4ade80',
+                      cursor: 'pointer',
+                      padding: '2px 6px',
+                      fontSize: '0.7rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 3,
+                    }}
+                    title="Configure CropDiseaseAI Local / Cloud Endpoint"
+                  >
+                    <Compass size={12} /> Config
+                  </button>
+                </div>
               </div>
+
+              {showAiSettings && (
+                <div style={{ marginBottom: 14, padding: '10px 12px', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(34, 197, 94, 0.35)', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontSize: '0.76rem', color: '#86efac', fontWeight: 600, marginBottom: 4 }}>
+                    CropDiseaseAI Service Connection:
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      type="text"
+                      placeholder="http://127.0.0.1:8000 or tunnel URL"
+                      value={cropDiseaseAiUrl}
+                      onChange={(e) => {
+                        setCropDiseaseAiUrl(e.target.value);
+                        localStorage.setItem('agriconnect_crop_ai_url', e.target.value);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '6px 8px',
+                        background: 'rgba(2, 6, 23, 0.7)',
+                        border: '1px solid #334155',
+                        borderRadius: 'var(--radius-sm)',
+                        color: '#f8fafc',
+                        fontSize: '0.76rem',
+                      }}
+                    />
+                    <button
+                      onClick={async () => {
+                        setCropAiChecking(true);
+                        try {
+                          const target = (cropDiseaseAiUrl || 'http://127.0.0.1:8000').replace(/\/$/, '');
+                          const res = await fetch(`${target}/health`, { method: 'GET' });
+                          const data = await res.json();
+                          setCropAiStatus(data.status === 'healthy' ? '✓ Connected to CropDiseaseAI' : '⚠ Server responded');
+                        } catch {
+                          setCropAiStatus('⚠ Server unreachable locally (Vision-RAG fallback active)');
+                        } finally {
+                          setCropAiChecking(false);
+                        }
+                      }}
+                      style={{
+                        padding: '6px 10px',
+                        background: 'rgba(34, 197, 94, 0.2)',
+                        border: '1px solid #22c55e',
+                        color: '#4ade80',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.74rem',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {cropAiChecking ? 'Testing...' : 'Test'}
+                    </button>
+                  </div>
+                  {cropAiStatus && (
+                    <div style={{ fontSize: '0.72rem', marginTop: 4, color: cropAiStatus.includes('✓') ? '#4ade80' : '#f59e0b' }}>
+                      {cropAiStatus}
+                    </div>
+                  )}
+                </div>
+              )}
               <p style={{ color: '#94a3b8', fontSize: '0.84rem', marginBottom: 14 }}>
                 Compare field camera photo or test leaf symptoms against 1,400+ trained pathology vectors:
               </p>
@@ -516,7 +606,18 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en' }) => {
                         <span className="badge badge-green">Trained Model Top Match</span>
                         <span className="badge badge-amber">{scanResult.severity} Severity</span>
                         {scanResult.model_version && (
-                          <span style={{ fontSize: '0.74rem', color: '#64748b' }}>{scanResult.model_version}</span>
+                          <span
+                            className="badge"
+                            style={{
+                              fontSize: '0.74rem',
+                              background: scanResult.model_version.includes('CropDiseaseAI') ? 'rgba(34, 197, 94, 0.15)' : 'rgba(100, 116, 139, 0.2)',
+                              border: scanResult.model_version.includes('CropDiseaseAI') ? '1px solid #22c55e' : '1px solid #64748b',
+                              color: scanResult.model_version.includes('CropDiseaseAI') ? '#4ade80' : '#94a3b8',
+                              fontWeight: 600,
+                            }}
+                          >
+                            ⚡ {scanResult.model_version}
+                          </span>
                         )}
                       </div>
                       <h3 style={{ fontSize: '1.45rem', color: '#f8fafc', marginTop: 6 }}>

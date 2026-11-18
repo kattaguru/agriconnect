@@ -339,6 +339,7 @@ class DiseaseScanRequest(BaseModel):
     crop_name: str = "Groundnut"
     image_base64: str | None = None
     sample_id: str | None = None
+    crop_disease_ai_url: str | None = None
 
 
 class DifferentialDiagnosis(BaseModel):

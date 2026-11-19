@@ -347,18 +347,32 @@ def scan_crop_disease(
         custom_crop_disease_ai_url=body.crop_disease_ai_url,
     )
 
-    # Record scan history in DB
-    scan_record = models.CropScanHistory(
-        user_id=user.id,
-        crop_name=result["crop_name"],
-        disease_name=result["disease_name"],
-        confidence=result["confidence"],
-        severity=result["severity"],
-        symptoms=result["symptoms"],
-        recommendations="; ".join(result["organic_remedies"][:2] + result["chemical_treatments"][:1]),
-    )
-    db.add(scan_record)
-    db.commit()
+    # Record scan history in DB safely (never crash diagnostic response if DB write encounters issues)
+    try:
+        crop_name_str = str(result.get("crop_name", body.crop_name))[:95]
+        disease_name_str = str(result.get("disease_name", "Unknown Disease"))[:115]
+        severity_str = str(result.get("severity", "Moderate"))[:45]
+        symptoms_str = str(result.get("symptoms", ""))[:480]
+        recs_list = (result.get("organic_remedies") or [])[:2] + (result.get("chemical_treatments") or [])[:1]
+        recommendations_str = "; ".join(str(r) for r in recs_list)[:980]
+
+        scan_record = models.CropScanHistory(
+            user_id=user.id,
+            crop_name=crop_name_str,
+            disease_name=disease_name_str,
+            confidence=float(result.get("confidence", 0.85)),
+            severity=severity_str,
+            symptoms=symptoms_str,
+            recommendations=recommendations_str,
+        )
+        db.add(scan_record)
+        db.commit()
+    except Exception as db_err:
+        print(f"[CropScan] Notice: Could not persist scan history record: {db_err}")
+        try:
+            db.rollback()
+        except Exception:
+            pass
 
     return schemas.DiseaseScanResponse(**result)
 

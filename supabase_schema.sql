@@ -146,8 +146,8 @@ CREATE TABLE IF NOT EXISTS crop_scans (
     disease_name VARCHAR(120) NOT NULL,
     confidence DOUBLE PRECISION NOT NULL,
     severity VARCHAR(50) NOT NULL,
-    symptoms VARCHAR(500),
-    recommendations VARCHAR(1000),
+    symptoms TEXT,
+    recommendations TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_crop_scans_user ON crop_scans(user_id);

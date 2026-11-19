@@ -781,21 +781,24 @@ def analyze_crop_image(
                     f"Prevention: {'; '.join(prevention_list[:2]) if prevention_list else 'Follow integrated pest management protocols.'}"
                 )
 
+                cleaned_organic = [str(r) for r in organic_rems] if isinstance(organic_rems, list) else [str(organic_rems)]
+                cleaned_chemical = [str(c) for c in chemical_treatments] if isinstance(chemical_treatments, list) else [str(chemical_treatments)]
+
                 return {
-                    "crop_name": dl_result.get("crop_display_name", crop_name),
-                    "disease_name": curated.get("display_name", dl_result.get("predicted_disease_id", "Disease").replace("_", " ").title()),
+                    "crop_name": str(dl_result.get("crop_display_name", crop_name)),
+                    "disease_name": str(curated.get("display_name", dl_result.get("predicted_disease_id", "Disease").replace("_", " ").title())),
                     "confidence": round(float(dl_result.get("confidence", 0.90)), 2),
                     "severity": severity_text,
                     "is_uncertain": bool(dl_result.get("is_low_confidence", False)),
-                    "symptoms": symptoms_text,
-                    "organic_remedies": organic_rems if isinstance(organic_rems, list) else [str(organic_rems)],
-                    "chemical_treatments": chemical_treatments if isinstance(chemical_treatments, list) else [str(chemical_treatments)],
-                    "guidance_notes": guidance,
-                    "source_citation": curated.get("source", "ANGRAU / ICAR-DGR / CropDiseaseAI Deep Learning"),
-                    "disclaimer": dl_result.get("disclaimer", (
+                    "symptoms": str(symptoms_text),
+                    "organic_remedies": cleaned_organic,
+                    "chemical_treatments": cleaned_chemical,
+                    "guidance_notes": str(guidance),
+                    "source_citation": str(curated.get("source", "ANGRAU / ICAR-DGR / CropDiseaseAI Deep Learning")),
+                    "disclaimer": str(dl_result.get("disclaimer", (
                         "Predictions are probabilistic and should be cross-verified in the field. "
                         "Chemical recommendations are retrieved from curated bulletins. Always consult certified extension personnel."
-                    )),
+                    ))),
                     "differential_diagnoses": differential_diagnoses,
                     "visual_metrics": metrics,
                     "model_version": "CropDiseaseAI Deep Learning (EfficientNetB0) - Live on Render",

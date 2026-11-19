@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from enum import Enum
 
-from sqlalchemy import JSON, Date, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import JSON, Date, DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -181,7 +181,7 @@ class CropScanHistory(Base):
     disease_name: Mapped[str] = mapped_column(String(120))
     confidence: Mapped[float]
     severity: Mapped[str] = mapped_column(String(50))
-    symptoms: Mapped[str | None] = mapped_column(String(500), default=None)
-    recommendations: Mapped[str | None] = mapped_column(String(1000), default=None)
+    symptoms: Mapped[str | None] = mapped_column(Text, default=None)
+    recommendations: Mapped[str | None] = mapped_column(Text, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

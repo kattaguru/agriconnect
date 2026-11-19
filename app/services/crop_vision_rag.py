@@ -580,8 +580,10 @@ def call_crop_disease_ai(
 ) -> dict[str, Any] | None:
     """Attempts inference via CropDiseaseAI deep learning service.
 
+    Includes retry with backoff to handle Render container cold-starts and transient restarts.
     Returns the response JSON if successful, or None if unavailable/offline.
     """
+    import time
     try:
         try:
             from ..config import settings
@@ -593,22 +595,100 @@ def call_crop_disease_ai(
         predict_url = f"{base_url}/predict/{crop_slug}"
         files = {"file": ("leaf.jpg", image_bytes, "image/jpeg")}
 
-        try:
-            import httpx
-            with httpx.Client(timeout=30.0) as client:
-                resp = client.post(predict_url, files=files)
+        for attempt in range(1, 3):
+            try:
+                import httpx
+                with httpx.Client(timeout=35.0) as client:
+                    resp = client.post(predict_url, files=files)
+                    if resp.status_code == 200:
+                        return resp.json()
+                    print(f"[CropDiseaseAI] Attempt {attempt} returned HTTP {resp.status_code}: {resp.text[:120]}")
+                    if resp.status_code in (502, 503, 504) and attempt < 2:
+                        time.sleep(2.5)
+                        continue
+            except ImportError:
+                import requests
+                resp = requests.post(predict_url, files=files, timeout=35.0)
                 if resp.status_code == 200:
                     return resp.json()
-                print(f"[CropDiseaseAI] Service returned HTTP {resp.status_code}: {resp.text[:120]}")
-        except ImportError:
-            import requests
-            resp = requests.post(predict_url, files=files, timeout=30.0)
-            if resp.status_code == 200:
-                return resp.json()
-            print(f"[CropDiseaseAI] Service returned HTTP {resp.status_code}: {resp.text[:120]}")
+                print(f"[CropDiseaseAI] Attempt {attempt} returned HTTP {resp.status_code}: {resp.text[:120]}")
+                if resp.status_code in (502, 503, 504) and attempt < 2:
+                    time.sleep(2.5)
+                    continue
+            except Exception as e:
+                print(f"[CropDiseaseAI] Attempt {attempt} network notice: {e}")
+                if attempt < 2:
+                    time.sleep(2.5)
+                    continue
     except Exception as exc:
         print(f"[CropDiseaseAI] Inference call notice: {exc}")
     return None
+
+
+def synthesize_sample_leaf_image(sample_key: str, crop_name: str) -> bytes | None:
+    """Generates synthetic 224x224 leaf JPEG bytes matching the symptom profile
+    for the given crop/disease sample so CropDiseaseAI deep learning can process it.
+    """
+    if not HAS_PIL:
+        return None
+    import io
+    from PIL import ImageDraw
+
+    # Base leaf green
+    base_color = (46, 125, 50)  # Forest Green
+    img = Image.new("RGB", (224, 224), color=base_color)
+    draw = ImageDraw.Draw(img)
+
+    sk = (sample_key or "").lower()
+    cn = (crop_name or "").lower()
+
+    if "tikka" in sk or "groundnut" in cn:
+        # Groundnut Tikka: Dark brown circular necrotic lesions with bright yellow halos
+        for center in [(60, 70), (140, 110), (100, 160), (170, 60), (70, 140)]:
+            draw.ellipse([center[0] - 22, center[1] - 22, center[0] + 22, center[1] + 22], fill=(218, 165, 32))
+            draw.ellipse([center[0] - 12, center[1] - 12, center[0] + 12, center[1] + 12], fill=(62, 39, 35))
+    elif "blast" in sk or "paddy" in cn or "rice" in cn:
+        # Paddy Blast: Spindle / diamond shaped lesions with gray centers and brown borders
+        for pos in [(70, 80), (130, 140), (100, 50), (160, 90)]:
+            draw.polygon([
+                (pos[0], pos[1] - 30),
+                (pos[0] + 12, pos[1]),
+                (pos[0], pos[1] + 30),
+                (pos[0] - 12, pos[1])
+            ], fill=(141, 110, 99))
+            draw.polygon([
+                (pos[0], pos[1] - 18),
+                (pos[0] + 6, pos[1]),
+                (pos[0], pos[1] + 18),
+                (pos[0] - 6, pos[1])
+            ], fill=(207, 216, 220))
+    elif "rust" in sk or "maize" in cn or "corn" in cn or "wheat" in cn:
+        # Rust: Small circular to elongate golden-brown / reddish-orange pustules
+        for x in range(40, 190, 25):
+            for y in range(40, 190, 30):
+                draw.ellipse([x - 7, y - 5, x + 7, y + 5], fill=(216, 67, 21))
+                draw.ellipse([x - 4, y - 3, x + 4, y + 3], fill=(191, 54, 12))
+    elif "anthracnose" in sk or "chilli" in cn or "pepper" in cn:
+        # Chilli Anthracnose: Sunken dark circular spots with concentric rings
+        for center in [(80, 80), (150, 130), (110, 170)]:
+            draw.ellipse([center[0] - 28, center[1] - 28, center[0] + 28, center[1] + 28], fill=(117, 117, 117))
+            draw.ellipse([center[0] - 18, center[1] - 18, center[0] + 18, center[1] + 18], fill=(33, 33, 33))
+            draw.ellipse([center[0] - 8, center[1] - 8, center[0] + 8, center[1] + 8], fill=(239, 83, 80))
+    elif "banana" in cn or "sigatoka" in sk:
+        # Banana Sigatoka: Linear brown streaks running parallel to veins
+        for y in range(50, 180, 28):
+            draw.rectangle([40, y, 185, y + 8], fill=(93, 64, 55))
+            draw.rectangle([50, y + 2, 175, y + 6], fill=(188, 170, 164))
+    else:
+        # Healthy foliage: clean bright green with subtle natural leaf veins
+        draw.line([(112, 10), (112, 214)], fill=(76, 175, 80), width=3)
+        for y in range(40, 200, 30):
+            draw.line([(112, y), (170, y - 15)], fill=(102, 187, 106), width=2)
+            draw.line([(112, y), (54, y - 15)], fill=(102, 187, 106), width=2)
+
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    return buf.getvalue()
 
 
 def analyze_crop_image(
@@ -642,11 +722,16 @@ def analyze_crop_image(
             image_bytes = base64.b64decode(clean_b64)
         except Exception as e:
             print("Base64 decode notice:", e)
+    elif sample_key:
+        # Synthesize visual leaf sample matching disease profile for live CropDiseaseAI inference
+        image_bytes = synthesize_sample_leaf_image(sample_key, crop_name)
 
     # 1. Determine feature vector & pathology metrics
     metrics: dict[str, Any] = {}
     if image_bytes:
         query_vector, metrics = extract_features_from_image(image_bytes)
+        if sample_key:
+            metrics["sample_preset"] = sample_key
 
         # Check for deep learning inference via CropDiseaseAI
         crop_slug = map_crop_to_cropdiseaseai(crop_name)
@@ -713,7 +798,7 @@ def analyze_crop_image(
                     )),
                     "differential_diagnoses": differential_diagnoses,
                     "visual_metrics": metrics,
-                    "model_version": "CropDiseaseAI Deep Learning (EfficientNetB0)",
+                    "model_version": "CropDiseaseAI Deep Learning (EfficientNetB0) - Live on Render",
                 }
     elif sample_key and sample_key in classes:
         query_vector = list(classes[sample_key]["centroid"])

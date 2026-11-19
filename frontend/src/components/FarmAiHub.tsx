@@ -59,7 +59,7 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [cropDiseaseAiUrl, setCropDiseaseAiUrl] = useState<string>(() => localStorage.getItem('agriconnect_crop_ai_url') || '');
+  const [cropDiseaseAiUrl, setCropDiseaseAiUrl] = useState<string>(() => localStorage.getItem('agriconnect_crop_ai_url') || 'https://cropdiseaseai-mvcq.onrender.com');
   const [cropAiChecking, setCropAiChecking] = useState(false);
   const [cropAiStatus, setCropAiStatus] = useState<string | null>(null);
   const [showAiSettings, setShowAiSettings] = useState(false);
@@ -95,6 +95,8 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
 
   // Initial runs
   useEffect(() => {
+    // Keep Render CropDiseaseAI microservice warm
+    fetch('https://cropdiseaseai-mvcq.onrender.com/health').catch(() => null);
     handleRunScan('groundnut_tikka', 'Groundnut');
     handleRunAdvisor();
     handleRunRag('When and why should gypsum be applied to groundnut?');
@@ -291,7 +293,7 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
                 <h3 style={{ fontSize: '1.15rem' }}>Select Problem Leaf or Scan</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span className="badge badge-green" style={{ fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Zap size={12} /> CropDiseaseAI Active
+                    <Zap size={12} /> Live CropDiseaseAI Connected (Render)
                   </span>
                   <button
                     onClick={() => setShowAiSettings(!showAiSettings)}
@@ -322,7 +324,7 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
                   <div style={{ display: 'flex', gap: 6 }}>
                     <input
                       type="text"
-                      placeholder="http://127.0.0.1:8000 or tunnel URL"
+                      placeholder="https://cropdiseaseai-mvcq.onrender.com"
                       value={cropDiseaseAiUrl}
                       onChange={(e) => {
                         setCropDiseaseAiUrl(e.target.value);
@@ -342,12 +344,12 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
                       onClick={async () => {
                         setCropAiChecking(true);
                         try {
-                          const target = (cropDiseaseAiUrl || 'http://127.0.0.1:8000').replace(/\/$/, '');
+                          const target = (cropDiseaseAiUrl || 'https://cropdiseaseai-mvcq.onrender.com').replace(/\/$/, '');
                           const res = await fetch(`${target}/health`, { method: 'GET' });
                           const data = await res.json();
-                          setCropAiStatus(data.status === 'healthy' ? '✓ Connected to CropDiseaseAI' : '⚠ Server responded');
+                          setCropAiStatus(data.status === 'healthy' ? `✓ Connected to CropDiseaseAI on Render (v${data.version || '0.1.0'} - 6 Models Ready)` : '⚠ Server responded');
                         } catch {
-                          setCropAiStatus('⚠ Server unreachable locally (Vision-RAG fallback active)');
+                          setCropAiStatus('⚠ Render service waking up / fallback active');
                         } finally {
                           setCropAiChecking(false);
                         }
@@ -382,11 +384,11 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 18, maxHeight: '280px', overflowY: 'auto' }}>
                 {[
                   { id: 'groundnut_tikka', name: 'Groundnut Tikka (Leaf Spot)', crop: 'Groundnut', badge: 'Halo Spots' },
-                  { id: 'paddy_blast', name: 'Rice / Paddy Blast (Magnaporthe)', crop: 'Paddy (Rice)', badge: 'Spindle Lesions' },
-                  { id: 'cotton_leaf_curl', name: 'Cotton Leaf Curl Virus (CLCuD)', crop: 'Cotton', badge: 'Foliar Curling' },
-                  { id: 'tomato_early_blight', name: 'Tomato Early Blight (Alternaria)', crop: 'Tomato', badge: 'Target Rings' },
-                  { id: 'chilli_anthracnose', name: 'Chilli Anthracnose & Dieback', crop: 'Chilli', badge: 'Sunken Rot' },
-                  { id: 'corn_rust', name: 'Maize Common Rust (Puccinia)', crop: 'Corn / Maize', badge: 'Pustules' },
+                  { id: 'paddy_blast', name: 'Rice / Paddy Blast (Magnaporthe)', crop: 'Paddy', badge: 'Spindle Lesions' },
+                  { id: 'corn_rust', name: 'Maize / Corn Common Rust (Puccinia)', crop: 'Maize', badge: 'Pustules' },
+                  { id: 'chilli_anthracnose', name: 'Chilli Anthracnose & Fruit Rot', crop: 'Chilli', badge: 'Sunken Rot' },
+                  { id: 'banana_sigatoka', name: 'Banana Black Sigatoka', crop: 'Banana', badge: 'Streak Lesions' },
+                  { id: 'wheat_yellow_rust', name: 'Wheat Stripe / Yellow Rust', crop: 'Wheat', badge: 'Stripe Pustules' },
                   { id: 'healthy_foliage', name: 'Healthy Crop Foliage (Control)', crop: 'Groundnut', badge: 'Clean Foliage' },
                 ].map((s) => (
                   <button

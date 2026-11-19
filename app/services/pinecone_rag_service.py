@@ -24,7 +24,7 @@ except ImportError:
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
-PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "market-forecaster")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "cropdisease-rag")
 PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "agricultural-rag")
 EMBEDDING_MODEL_NAME = "llama-text-embed-v2"
 EMBEDDING_DIM = 384
@@ -352,3 +352,4 @@ VERIFIED AGRONOMIC CONTEXT:
             "confidence": confidence,
             "disclaimer": DISCLAIMER_TEXT,
         }
+

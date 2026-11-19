@@ -566,6 +566,10 @@ def map_crop_to_cropdiseaseai(crop_name: str) -> str | None:
         return "maize"
     if any(k in c for k in ["chilli", "chili", "pepper"]):
         return "chilli"
+    if any(k in c for k in ["banana", "plantain", "sigatoka", "cordana"]):
+        return "banana"
+    if any(k in c for k in ["wheat", "cereal"]):
+        return "wheat"
     return None
 
 

@@ -497,7 +497,7 @@ DISCLAIMER_RAG = (
 @router.post("/rag-query", response_model=schemas.RagQueryResponse)
 def query_agricultural_rag(body: schemas.RagQueryRequest, _: models.User = Depends(current_user)):
     bot = AgriConnectRAGBot.get_instance()
-    res = bot.ask(question=body.question, crop=body.crop)
+    res = bot.ask(question=body.question, crop=body.crop, custom_api_key=body.api_key)
     return schemas.RagQueryResponse(
         question=res["question"],
         answer=res["answer"],

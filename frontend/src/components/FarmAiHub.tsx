@@ -86,6 +86,8 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
   const [ragQuestion, setRagQuestion] = useState('When and why should gypsum be applied to groundnut?');
   const [ragResult, setRagResult] = useState<RagQueryResponse | null>(null);
   const [ragLoading, setRagLoading] = useState(false);
+  const [groqApiKey, setGroqApiKey] = useState<string>(() => localStorage.getItem('agriconnect_groq_key') || '');
+  const [showRagSettings, setShowRagSettings] = useState(false);
 
   // 4. Mandi Prices State
   const [mandiCrop, setMandiCrop] = useState('Groundnut');
@@ -334,7 +336,10 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
     setRagLoading(true);
     setRagQuestion(q);
     try {
-      const res = await api.intelligence.queryRag({ question: q });
+      const res = await api.intelligence.queryRag({
+        question: q,
+        api_key: groqApiKey || undefined,
+      });
       setRagResult(res);
     } catch (e) {
       console.error(e);
@@ -1376,9 +1381,78 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
       {subTab === 'rag' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BookOpen size={20} color="#22c55e" /> Grounded Agricultural Knowledge Assistant
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+              <h3 style={{ fontSize: '1.2rem', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BookOpen size={20} color="#22c55e" /> Grounded Agricultural Knowledge Assistant
+              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="badge badge-green" style={{ fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Sparkles size={12} /> ICAR & ANGRAU Grounded (Live)
+                </span>
+                <button
+                  onClick={() => setShowRagSettings(!showRagSettings)}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: '#4ade80',
+                    cursor: 'pointer',
+                    padding: '2px 8px',
+                    fontSize: '0.72rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                  title="Configure LLM API Key (Groq / Gemini)"
+                >
+                  <Compass size={12} /> Engine Config
+                </button>
+              </div>
+            </div>
+
+            {showRagSettings && (
+              <div style={{ marginBottom: 16, padding: '12px 14px', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(34, 197, 94, 0.35)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#86efac', fontWeight: 600, marginBottom: 4 }}>
+                  Optional LLM Accelerator (Groq LPU / Gemini API):
+                </div>
+                <p style={{ color: '#94a3b8', fontSize: '0.74rem', margin: '0 0 8px 0' }}>
+                  The built-in ICAR/ANGRAU Agronomic Synthesizer is active by default. You can optionally paste a free Groq API key (`gsk_...`) to activate high-speed Llama 3.3 LPU inference.
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="password"
+                    placeholder="Paste free Groq API key (gsk_...) or leave blank for verified in-memory RAG"
+                    value={groqApiKey}
+                    onChange={(e) => {
+                      setGroqApiKey(e.target.value);
+                      localStorage.setItem('agriconnect_groq_key', e.target.value);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '6px 10px',
+                      background: 'rgba(2, 6, 23, 0.7)',
+                      border: '1px solid #334155',
+                      borderRadius: 'var(--radius-sm)',
+                      color: '#f8fafc',
+                      fontSize: '0.78rem',
+                    }}
+                  />
+                  {groqApiKey && (
+                    <button
+                      onClick={() => {
+                        setGroqApiKey('');
+                        localStorage.removeItem('agriconnect_groq_key');
+                      }}
+                      className="btn-secondary btn-sm"
+                      style={{ fontSize: '0.72rem' }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <p style={{ color: '#94a3b8', fontSize: '0.88rem', marginBottom: 18 }}>
               Answers synthesized strictly from indexed verified publications (ICAR, ANGRAU, Ministry of Agriculture) with exact citations.
             </p>
@@ -1389,7 +1463,9 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
               {[
                 'When and why should gypsum be applied to groundnut?',
                 'How to control yellow stem borer in paddy?',
+                'Paddy package of practices & fertilizer schedule',
                 'What is PM-KISAN eligibility and payment structure?',
+                'How to control Fall Armyworm in maize?',
                 'What is the intimation window for PMFBY crop insurance claims?',
               ].map((prompt, pIdx) => (
                 <button
@@ -1423,8 +1499,21 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
               </button>
             </div>
 
+            {/* Loading Indicator */}
+            {ragLoading && (
+              <div style={{ marginTop: 20, padding: '24px', textAlign: 'center', background: 'rgba(15, 23, 42, 0.5)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(34, 197, 94, 0.25)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 32, height: 32, border: '3px solid rgba(34, 197, 94, 0.2)', borderTopColor: '#22c55e', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <div style={{ color: '#86efac', fontSize: '0.88rem', fontWeight: 600 }}>
+                  ⚡ Consulting ICAR & ANGRAU Verified Agricultural Knowledge Base...
+                </div>
+                <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>
+                  Synthesizing precise dosages, cultural practices, and verified extension citations.
+                </div>
+              </div>
+            )}
+
             {/* Answer Display */}
-            {ragResult && (
+            {ragResult && !ragLoading && (
               <div
                 style={{
                   marginTop: 22,

@@ -200,7 +200,7 @@ export const api = {
     getScanHistory: () => request<any[]>('/intelligence/scan-history'),
     getModelInfo: () => request<ModelInfoResponse>('/intelligence/model-info'),
     trainModel: () => request<ModelTrainResponse>('/intelligence/train-model', { method: 'POST' }),
-    queryRag: (body: { question: string; crop?: string }) =>
+    queryRag: (body: { question: string; crop?: string; api_key?: string }) =>
       request<RagQueryResponse>('/intelligence/rag-query', { method: 'POST', body: JSON.stringify(body) }),
     getMarketPrices: (crop?: string, district?: string) => {
       const q = new URLSearchParams();

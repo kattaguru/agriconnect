@@ -412,6 +412,7 @@ class DiseaseScanHistoryOut(BaseModel):
 class RagQueryRequest(BaseModel):
     question: str = Field(min_length=3, max_length=500)
     crop: str | None = None
+    api_key: str | None = None
 
 
 class RagSourceDoc(BaseModel):

@@ -558,19 +558,32 @@ def extract_features_from_image(image_bytes: bytes) -> tuple[list[float], dict[s
 
 def map_crop_to_cropdiseaseai(crop_name: str) -> str | None:
     c = (crop_name or "").lower().strip()
-    if any(k in c for k in ["groundnut", "peanut", "tikka"]):
-        return "groundnut"
-    if any(k in c for k in ["paddy", "rice", "blast"]):
+    # 1. Primary check on host crop names
+    if any(k in c for k in ["paddy", "rice", "oryza"]):
         return "paddy"
-    if any(k in c for k in ["maize", "corn", "rust"]):
+    if any(k in c for k in ["groundnut", "peanut", "arachis"]):
+        return "groundnut"
+    if any(k in c for k in ["maize", "corn", "zea"]):
         return "maize"
-    if any(k in c for k in ["chilli", "chili", "pepper"]):
+    if any(k in c for k in ["chilli", "chili", "pepper", "capsicum"]):
         return "chilli"
-    if any(k in c for k in ["banana", "plantain", "sigatoka", "cordana"]):
+    if any(k in c for k in ["banana", "plantain", "musa"]):
         return "banana"
-    if any(k in c for k in ["wheat", "cereal"]):
+    if any(k in c for k in ["wheat", "cereal", "triticum"]):
         return "wheat"
-    return None
+    # 2. Secondary check by pathology keywords
+    if any(k in c for k in ["blast", "tungro", "hispa", "sheath"]):
+        return "paddy"
+    if any(k in c for k in ["tikka"]):
+        return "groundnut"
+    if any(k in c for k in ["sigatoka", "cordana"]):
+        return "banana"
+    if any(k in c for k in ["anthracnose"]):
+        return "chilli"
+    if any(k in c for k in ["rust"]):
+        return "maize"
+    # Default to paddy if unrecognized
+    return "paddy"
 
 
 def call_crop_disease_ai(

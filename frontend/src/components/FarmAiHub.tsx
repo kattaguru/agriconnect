@@ -47,13 +47,32 @@ interface FarmAiHubProps {
   }) => void;
 }
 
+const SUPPORTED_CROPS = [
+  { id: 'paddy', name: 'Paddy', fullName: 'Paddy / Rice', icon: '🌾', badge: '10 Pathology Classes' },
+  { id: 'groundnut', name: 'Groundnut', fullName: 'Groundnut / Peanut', icon: '🥜', badge: '5 Pathology Classes' },
+  { id: 'maize', name: 'Maize', fullName: 'Maize / Corn', icon: '🌽', badge: '4 Pathology Classes' },
+  { id: 'chilli', name: 'Chilli', fullName: 'Chilli / Pepper', icon: '🌶️', badge: '6 Pathology Classes' },
+  { id: 'banana', name: 'Banana', fullName: 'Banana / Plantain', icon: '🍌', badge: '4 Pathology Classes' },
+  { id: 'wheat', name: 'Wheat', fullName: 'Wheat / Cereal', icon: '🌾', badge: '3 Pathology Classes' },
+];
+
+const DISEASE_SAMPLES = [
+  { id: 'paddy_blast', name: 'Rice / Paddy Blast (Magnaporthe)', crop: 'Paddy', badge: 'Spindle Lesions' },
+  { id: 'groundnut_tikka', name: 'Groundnut Tikka (Leaf Spot)', crop: 'Groundnut', badge: 'Halo Spots' },
+  { id: 'corn_rust', name: 'Maize / Corn Common Rust (Puccinia)', crop: 'Maize', badge: 'Pustules' },
+  { id: 'chilli_anthracnose', name: 'Chilli Anthracnose & Fruit Rot', crop: 'Chilli', badge: 'Sunken Rot' },
+  { id: 'banana_sigatoka', name: 'Banana Black Sigatoka', crop: 'Banana', badge: 'Streak Lesions' },
+  { id: 'wheat_yellow_rust', name: 'Wheat Stripe / Yellow Rust', crop: 'Wheat', badge: 'Stripe Pustules' },
+  { id: 'healthy_foliage', name: 'Healthy Crop Foliage (Control)', crop: 'Paddy', badge: 'Clean Foliage' },
+];
+
 export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWorkers }) => {
   const t = getT(lang);
   const [subTab, setSubTab] = useState<'disease' | 'advisor' | 'rag' | 'mandi'>('disease');
 
   // 1. Disease Scanner State
-  const [selectedCrop, setSelectedCrop] = useState('Groundnut');
-  const [sampleId, setSampleId] = useState('groundnut_tikka');
+  const [selectedCrop, setSelectedCrop] = useState('Paddy');
+  const [sampleId, setSampleId] = useState('paddy_blast');
   const [scanResult, setScanResult] = useState<DiseaseScanResponse | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -100,7 +119,7 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
   useEffect(() => {
     // Keep Render CropDiseaseAI microservice warm
     fetch('https://cropdiseaseai-mvcq.onrender.com/health').catch(() => null);
-    handleRunScan('groundnut_tikka', 'Groundnut');
+    handleRunScan('paddy_blast', 'Paddy');
     handleRunAdvisor();
     handleRunRag('When and why should gypsum be applied to groundnut?');
     handleLoadMandi('Groundnut');
@@ -167,12 +186,12 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
   const getCropSlug = (crop: string): string => {
     const c = (crop || '').toLowerCase();
     if (c.includes('paddy') || c.includes('rice')) return 'paddy';
-    if (c.includes('maize') || c.includes('corn')) return 'maize';
     if (c.includes('groundnut') || c.includes('peanut')) return 'groundnut';
+    if (c.includes('maize') || c.includes('corn')) return 'maize';
     if (c.includes('chilli') || c.includes('chili') || c.includes('pepper')) return 'chilli';
     if (c.includes('banana')) return 'banana';
     if (c.includes('wheat')) return 'wheat';
-    return 'groundnut';
+    return 'paddy';
   };
 
   const handleRunScan = async (sample: string, crop: string) => {
@@ -230,6 +249,72 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
     } finally {
       setScanning(false);
     }
+  };
+
+  const handleReScanWithCrop = async (cropName: string, base64Img: string) => {
+    setScanning(true);
+    setScanError(null);
+    setSelectedCrop(cropName);
+    try {
+      const res = await api.intelligence.scanDisease({
+        crop_name: cropName,
+        image_base64: base64Img,
+        crop_disease_ai_url: cropDiseaseAiUrl || undefined,
+      });
+      setScanResult(res);
+      setScanError(null);
+      api.intelligence.getScanHistory().then(setScanHistory).catch(() => null);
+    } catch (err: any) {
+      console.warn('Backend re-scan notice, trying direct upload to CropDiseaseAI:', err);
+      try {
+        const cropSlug = getCropSlug(cropName);
+        const cleanB64 = base64Img.includes('base64,') ? base64Img.split('base64,')[1] : base64Img;
+        const byteCharacters = atob(cleanB64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+        const fd = new FormData();
+        fd.append('file', blob, 'leaf.jpg');
+        const targetUrl = (cropDiseaseAiUrl || 'https://cropdiseaseai-mvcq.onrender.com').replace(/\/$/, '');
+        const directResp = await fetch(`${targetUrl}/predict/${cropSlug}`, {
+          method: 'POST',
+          body: fd,
+        });
+        if (directResp.ok) {
+          const dl = await directResp.json();
+          const formatted = formatCropDiseaseAiResult(dl, cropName);
+          setScanResult(formatted);
+          setScanError(null);
+          return;
+        }
+      } catch (directErr) {
+        console.error('Direct file re-scan fallback error:', directErr);
+      }
+      setScanError('Could not complete diagnosis. Please ensure CropDiseaseAI service is reachable and retry.');
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const handleSelectCrop = async (cropName: string) => {
+    setSelectedCrop(cropName);
+    if (uploadedImageUrl) {
+      await handleReScanWithCrop(cropName, uploadedImageUrl);
+    } else {
+      const slug = getCropSlug(cropName);
+      const matched = DISEASE_SAMPLES.find((s) => getCropSlug(s.crop) === slug) || DISEASE_SAMPLES[0];
+      await handleRunScan(matched.id, cropName);
+    }
+  };
+
+  const handleClearUploadedPhoto = () => {
+    setUploadedImageUrl(null);
+    const slug = getCropSlug(selectedCrop);
+    const matched = DISEASE_SAMPLES.find((s) => getCropSlug(s.crop) === slug) || DISEASE_SAMPLES[0];
+    handleRunScan(matched.id, selectedCrop);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -505,49 +590,60 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
                   )}
                 </div>
               )}
-              <p style={{ color: '#94a3b8', fontSize: '0.84rem', marginBottom: 14 }}>
-                Compare field camera photo or test leaf symptoms against 1,400+ trained pathology vectors:
-              </p>
-
-              {/* Disease Sample Buttons */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 18, maxHeight: '280px', overflowY: 'auto' }}>
-                {[
-                  { id: 'groundnut_tikka', name: 'Groundnut Tikka (Leaf Spot)', crop: 'Groundnut', badge: 'Halo Spots' },
-                  { id: 'paddy_blast', name: 'Rice / Paddy Blast (Magnaporthe)', crop: 'Paddy', badge: 'Spindle Lesions' },
-                  { id: 'corn_rust', name: 'Maize / Corn Common Rust (Puccinia)', crop: 'Maize', badge: 'Pustules' },
-                  { id: 'chilli_anthracnose', name: 'Chilli Anthracnose & Fruit Rot', crop: 'Chilli', badge: 'Sunken Rot' },
-                  { id: 'banana_sigatoka', name: 'Banana Black Sigatoka', crop: 'Banana', badge: 'Streak Lesions' },
-                  { id: 'wheat_yellow_rust', name: 'Wheat Stripe / Yellow Rust', crop: 'Wheat', badge: 'Stripe Pustules' },
-                  { id: 'healthy_foliage', name: 'Healthy Crop Foliage (Control)', crop: 'Groundnut', badge: 'Clean Foliage' },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => handleRunScan(s.id, s.crop)}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: 'var(--radius-md)',
-                      background: sampleId === s.id && !uploadedImageUrl ? 'rgba(34, 197, 94, 0.2)' : 'rgba(15, 23, 42, 0.55)',
-                      border: sampleId === s.id && !uploadedImageUrl ? '1px solid #22c55e' : '1px solid var(--border-subtle)',
-                      color: '#f8fafc',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      textAlign: 'left',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{s.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Crop: {s.crop}</div>
-                    </div>
-                    <span className="badge badge-amber" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>{s.badge}</span>
-                  </button>
-                ))}
+              {/* Step 1: Explicit Crop Selector Bar */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1' }}>
+                    1. Select Target Field Crop:
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: '#4ade80', fontWeight: 600 }}>
+                    Active: {selectedCrop}
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                  {SUPPORTED_CROPS.map((c) => {
+                    const isSelected = getCropSlug(selectedCrop) === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => handleSelectCrop(c.name)}
+                        style={{
+                          padding: '8px 6px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: isSelected ? 'rgba(34, 197, 94, 0.22)' : 'rgba(15, 23, 42, 0.6)',
+                          border: isSelected ? '1.5px solid #22c55e' : '1px solid var(--border-subtle)',
+                          color: isSelected ? '#4ade80' : '#cbd5e1',
+                          fontWeight: isSelected ? 700 : 500,
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 5,
+                          transition: 'all 0.15s ease',
+                          boxShadow: isSelected ? '0 0 10px rgba(34, 197, 94, 0.25)' : 'none',
+                        }}
+                      >
+                        <span>{c.icon}</span>
+                        <span>{c.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Camera Snap & Upload Buttons */}
-              <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* Step 2: Camera Snap & Upload Buttons */}
+              <div style={{ marginBottom: 14, padding: '12px', background: 'rgba(15, 23, 42, 0.45)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1' }}>
+                    2. Scan Field Leaf:
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                    Diagnosing as: <strong style={{ color: '#4ade80' }}>{selectedCrop}</strong>
+                  </span>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <label
                     style={{
@@ -608,10 +704,64 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
                 </div>
 
                 {uploadedImageUrl && (
-                  <div style={{ fontSize: '0.74rem', color: '#86efac', textAlign: 'center' }}>
-                    ✓ Custom photo loaded & features extracted via PIL Vision Pipeline
+                  <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(34, 197, 94, 0.1)', padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}>
+                    <span style={{ fontSize: '0.74rem', color: '#86efac' }}>
+                      ✓ Custom field photo loaded ({selectedCrop})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleClearUploadedPhoto}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#f87171',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        padding: '2px 4px',
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      Clear / Use Sample
+                    </button>
                   </div>
                 )}
+              </div>
+
+              {/* Step 3: Disease Sample Reference Buttons */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1', display: 'block', marginBottom: 6 }}>
+                  3. Or Pick Standard Pathology Reference:
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: '200px', overflowY: 'auto' }}>
+                  {DISEASE_SAMPLES.map((s) => {
+                    const isMatched = sampleId === s.id && !uploadedImageUrl;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => handleRunScan(s.id, s.crop)}
+                        style={{
+                          padding: '8px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: isMatched ? 'rgba(34, 197, 94, 0.2)' : 'rgba(15, 23, 42, 0.55)',
+                          border: isMatched ? '1px solid #22c55e' : '1px solid var(--border-subtle)',
+                          color: '#f8fafc',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          textAlign: 'left',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>{s.name}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Crop: {s.crop}</div>
+                        </div>
+                        <span className="badge badge-amber" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>{s.badge}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Visual Leaf Simulator Box */}
@@ -790,9 +940,31 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWo
                       <h3 style={{ fontSize: '1.45rem', color: '#f8fafc', marginTop: 6 }}>
                         {scanResult.disease_name}
                       </h3>
-                      <p style={{ color: '#94a3b8', fontSize: '0.86rem' }}>
-                        Host Crop: <strong style={{ color: '#cbd5e1' }}>{scanResult.crop_name}</strong>
-                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                        <p style={{ color: '#94a3b8', fontSize: '0.86rem', margin: 0 }}>
+                          Host Crop: <strong style={{ color: '#4ade80' }}>{scanResult.crop_name}</strong>
+                        </p>
+                        <span style={{ color: '#64748b', fontSize: '0.8rem' }}>• Switch Crop:</span>
+                        {SUPPORTED_CROPS.map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => handleSelectCrop(c.name)}
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.72rem',
+                              background: getCropSlug(scanResult.crop_name) === c.id ? 'rgba(34, 197, 94, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                              border: getCropSlug(scanResult.crop_name) === c.id ? '1px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.1)',
+                              color: getCropSlug(scanResult.crop_name) === c.id ? '#4ade80' : '#cbd5e1',
+                              cursor: 'pointer',
+                            }}
+                            title={`Re-diagnose current leaf as ${c.fullName}`}
+                          >
+                            {c.icon} {c.name}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div style={{ textAlign: 'right' }}>

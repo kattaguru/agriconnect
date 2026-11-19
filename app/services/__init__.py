@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from .. import models
 from . import crop_vision_rag
+from .pinecone_rag_service import AgriConnectRAGBot
 
 
 def create_notification(
@@ -40,4 +41,4 @@ def record_audit(
     return log
 
 
-__all__ = ["create_notification", "record_audit", "crop_vision_rag"]
+__all__ = ["create_notification", "record_audit", "crop_vision_rag", "AgriConnectRAGBot"]

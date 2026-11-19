@@ -7,7 +7,7 @@ from .. import models, schemas
 from ..database import get_db
 from ..geo import distance_km
 from ..security import current_user
-from ..services import record_audit, crop_vision_rag
+from ..services import record_audit, crop_vision_rag, AgriConnectRAGBot
 
 router = APIRouter(prefix="/api/intelligence", tags=["intelligence"])
 
@@ -471,65 +471,15 @@ DISCLAIMER_RAG = (
 
 @router.post("/rag-query", response_model=schemas.RagQueryResponse)
 def query_agricultural_rag(body: schemas.RagQueryRequest, _: models.User = Depends(current_user)):
-    q = body.question.lower()
-    words = [w for w in q.replace("?", "").replace(",", "").split() if len(w) > 2]
-
-    matched_docs = []
-    for doc in RAG_DOCUMENTS:
-        score = 0.0
-        doc_text = (doc["title"] + " " + doc["content"]).lower()
-        for kw in doc["keywords"]:
-            if kw in q:
-                score += 2.5
-        for word in words:
-            if word in doc_text:
-                score += 1.0
-
-        if score > 1.5:
-            matched_docs.append((score, doc))
-
-    matched_docs.sort(key=lambda x: x[0], reverse=True)
-
-    if not matched_docs:
-        return schemas.RagQueryResponse(
-            question=body.question,
-            answer=(
-                "I could not locate sufficient verified guidance on this specific query in the current AgriConnect trusted extension documents. "
-                "To protect crop safety, I avoid generating unsupported advice. Please contact your nearest Mandal Agricultural Officer "
-                "or call the toll-free Kisan Call Centre at 1800-180-1551."
-            ),
-            grounded=False,
-            sources=[],
-            confidence=0.0,
-            disclaimer=DISCLAIMER_RAG,
-        )
-
-    # Top docs
-    top_matches = matched_docs[:2]
-    sources = []
-    answer_parts = []
-
-    for sc, doc in top_matches:
-        sources.append(schemas.RagSourceDoc(
-            title=doc["title"],
-            source=doc["source"],
-            relevance_score=round(min(1.0, sc / 8.0), 2),
-            excerpt=doc["content"][:240] + "...",
-        ))
-        answer_parts.append(doc["content"])
-
-    combined_answer = (
-        f"Based on authoritative guidance from {top_matches[0][1]['source']}:\n\n"
-        + "\n\n".join(answer_parts)
-    )
-
+    bot = AgriConnectRAGBot.get_instance()
+    res = bot.ask(question=body.question, crop=body.crop)
     return schemas.RagQueryResponse(
-        question=body.question,
-        answer=combined_answer,
-        grounded=True,
-        sources=sources,
-        confidence=round(min(0.98, top_matches[0][0] / 6.0), 2),
-        disclaimer=DISCLAIMER_RAG,
+        question=res["question"],
+        answer=res["answer"],
+        grounded=res["grounded"],
+        sources=[schemas.RagSourceDoc(**s) for s in res["sources"]],
+        confidence=res["confidence"],
+        disclaimer=res["disclaimer"],
     )
 
 

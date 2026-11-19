@@ -44,6 +44,10 @@ class Settings:
         else ""
     )
     crop_disease_ai_url: str = os.getenv("CROP_DISEASE_AI_URL", "http://127.0.0.1:8000")
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    pinecone_api_key: str = os.getenv("PINECONE_API_KEY", "")
+    pinecone_index: str = os.getenv("PINECONE_INDEX_NAME", "market-forecaster")
+    pinecone_namespace: str = os.getenv("PINECONE_NAMESPACE", "agricultural-rag")
 
 
 settings = Settings()

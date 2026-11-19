@@ -598,27 +598,27 @@ def call_crop_disease_ai(
         for attempt in range(1, 3):
             try:
                 import httpx
-                with httpx.Client(timeout=35.0) as client:
+                with httpx.Client(timeout=14.0) as client:
                     resp = client.post(predict_url, files=files)
                     if resp.status_code == 200:
                         return resp.json()
                     print(f"[CropDiseaseAI] Attempt {attempt} returned HTTP {resp.status_code}: {resp.text[:120]}")
                     if resp.status_code in (502, 503, 504) and attempt < 2:
-                        time.sleep(2.5)
+                        time.sleep(1.0)
                         continue
             except ImportError:
                 import requests
-                resp = requests.post(predict_url, files=files, timeout=35.0)
+                resp = requests.post(predict_url, files=files, timeout=14.0)
                 if resp.status_code == 200:
                     return resp.json()
                 print(f"[CropDiseaseAI] Attempt {attempt} returned HTTP {resp.status_code}: {resp.text[:120]}")
                 if resp.status_code in (502, 503, 504) and attempt < 2:
-                    time.sleep(2.5)
+                    time.sleep(1.0)
                     continue
             except Exception as e:
                 print(f"[CropDiseaseAI] Attempt {attempt} network notice: {e}")
                 if attempt < 2:
-                    time.sleep(2.5)
+                    time.sleep(1.0)
                     continue
     except Exception as exc:
         print(f"[CropDiseaseAI] Inference call notice: {exc}")

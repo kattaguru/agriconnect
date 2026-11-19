@@ -27,9 +27,19 @@ import { Language, getT } from '../i18n';
 
 interface MarketplaceFarmerProps {
   lang?: Language;
+  initialJobDraft?: {
+    work_type?: string;
+    required_skill?: string;
+    description?: string;
+  } | null;
+  autoOpenPostJob?: boolean;
 }
 
-export const MarketplaceFarmer: React.FC<MarketplaceFarmerProps> = ({ lang = 'en' }) => {
+export const MarketplaceFarmer: React.FC<MarketplaceFarmerProps> = ({
+  lang = 'en',
+  initialJobDraft = null,
+  autoOpenPostJob = false,
+}) => {
   const t = getT(lang);
   const [farms, setFarms] = useState<Farm[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -59,6 +69,7 @@ export const MarketplaceFarmer: React.FC<MarketplaceFarmerProps> = ({ lang = 'en
   const [selectedFarmId, setSelectedFarmId] = useState<number | ''>('');
   const [workType, setWorkType] = useState('Groundnut harvesting & pod stripping');
   const [reqSkill, setReqSkill] = useState('harvesting');
+  const [jobDescription, setJobDescription] = useState('');
   const [workersReq, setWorkersReq] = useState('2');
   const [startDate, setStartDate] = useState('');
   const [durationDays, setDurationDays] = useState('3');
@@ -71,6 +82,18 @@ export const MarketplaceFarmer: React.FC<MarketplaceFarmerProps> = ({ lang = 'en
   const [isListeningVoice, setIsListeningVoice] = useState(false);
   const [voiceLang, setVoiceLang] = useState<'en-IN' | 'te-IN' | 'hi-IN'>('en-IN');
   const [expandedCandidateScores, setExpandedCandidateScores] = useState<Record<number, boolean>>({});
+
+  // Sync initial job draft (e.g. from Crop Disease Scanner CTA)
+  useEffect(() => {
+    if (initialJobDraft) {
+      if (initialJobDraft.work_type) setWorkType(initialJobDraft.work_type);
+      if (initialJobDraft.required_skill) setReqSkill(initialJobDraft.required_skill);
+      if (initialJobDraft.description) setJobDescription(initialJobDraft.description);
+      if (autoOpenPostJob) {
+        setShowPostJob(true);
+      }
+    }
+  }, [initialJobDraft, autoOpenPostJob]);
 
   const handleVoiceInput = () => {
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -944,6 +967,24 @@ export const MarketplaceFarmer: React.FC<MarketplaceFarmerProps> = ({ lang = 'en
               >
                 <AlertTriangle size={18} color="#ef4444" style={{ flexShrink: 0 }} />
                 <span>{postJobError}</span>
+              </div>
+            )}
+
+            {jobDescription && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'rgba(34, 197, 94, 0.12)',
+                  border: '1px solid rgba(34, 197, 94, 0.35)',
+                  color: '#86efac',
+                  marginBottom: 14,
+                  fontSize: '0.84rem',
+                  lineHeight: 1.45,
+                }}
+              >
+                <strong>🔬 Prescribed Treatment Recommendation:</strong>
+                <div style={{ marginTop: 2, color: '#f8fafc' }}>{jobDescription}</div>
               </div>
             )}
 

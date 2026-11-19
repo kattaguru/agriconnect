@@ -40,9 +40,14 @@ import { Language, getT } from '../i18n';
 
 interface FarmAiHubProps {
   lang?: Language;
+  onHireSprayWorkers?: (draft: {
+    work_type: string;
+    required_skill: string;
+    description: string;
+  }) => void;
 }
 
-export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en' }) => {
+export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en', onHireSprayWorkers }) => {
   const t = getT(lang);
   const [subTab, setSubTab] = useState<'disease' | 'advisor' | 'rag' | 'mandi'>('disease');
 
@@ -790,6 +795,61 @@ export const FarmAiHub: React.FC<FarmAiHubProps> = ({ lang = 'en' }) => {
                   >
                     <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
                     <span>{scanResult.disclaimer}</span>
+                  </div>
+
+                  {/* Actionable Worker Hiring Card */}
+                  <div
+                    style={{
+                      marginTop: 18,
+                      padding: '18px 20px',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(15, 23, 42, 0.85) 100%)',
+                      border: '1px solid rgba(34, 197, 94, 0.45)',
+                      boxShadow: '0 4px 18px rgba(0, 0, 0, 0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 14,
+                    }}
+                  >
+                    <div>
+                      <h4 style={{ fontSize: '1.05rem', color: '#f8fafc', fontWeight: 700, margin: 0 }}>
+                        Need help treating this condition in your field?
+                      </h4>
+                      <p style={{ fontSize: '0.84rem', color: '#94a3b8', margin: '5px 0 0 0' }}>
+                        Hire verified local workers equipped with power sprayers and protective gear to apply prescribed treatments.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const chemicalDosage =
+                          scanResult.chemical_treatments?.[0] || 'prescribed standard dosage';
+                        const draft = {
+                          work_type: 'Pesticide Spraying & Treatment',
+                          required_skill: 'Power Sprayer / Chemical Handling',
+                          description: `Spray prescribed treatment for ${scanResult.disease_name} on ${scanResult.crop_name} (${chemicalDosage})`,
+                        };
+                        if (onHireSprayWorkers) {
+                          onHireSprayWorkers(draft);
+                        }
+                      }}
+                      className="btn-primary"
+                      style={{
+                        padding: '10px 20px',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        cursor: 'pointer',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: '0 0 16px rgba(34, 197, 94, 0.35)',
+                      }}
+                    >
+                      🧑‍🌾 Hire Spray Workers on AgriConnect
+                    </button>
                   </div>
                 </div>
               )}

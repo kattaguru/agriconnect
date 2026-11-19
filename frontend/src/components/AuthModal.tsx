@@ -107,13 +107,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
     try {
       localStorage.setItem('agriconnect_oauth_intent_role', role);
-      // Clear any stale local auth state before starting fresh handshake
-      await supabase.auth.signOut().catch(() => {});
 
+      const redirectTarget = window.location.origin.replace(/\/+$/, '');
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: redirectTarget,
           queryParams: {
             prompt: 'select_account',
             access_type: 'offline',

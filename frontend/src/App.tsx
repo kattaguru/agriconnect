@@ -29,6 +29,13 @@ export const App: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Active Job Draft pre-filled from external AI triggers (e.g. Crop Disease Scanner)
+  const [farmerJobDraft, setFarmerJobDraft] = useState<{
+    work_type: string;
+    required_skill: string;
+    description: string;
+  } | null>(null);
+
   // Initialize user session from localStorage or active Supabase OAuth callback
   useEffect(() => {
     let isMounted = true;
@@ -330,7 +337,12 @@ export const App: React.FC = () => {
                 </div>
 
                 {hybridSubTab === 'farmer' ? (
-                  <MarketplaceFarmer key={`hybrid-farmer-${currentUser.id}-${currentUser.token}`} lang={lang} />
+                  <MarketplaceFarmer
+                    key={`hybrid-farmer-${currentUser.id}-${currentUser.token}`}
+                    lang={lang}
+                    initialJobDraft={farmerJobDraft}
+                    autoOpenPostJob={Boolean(farmerJobDraft)}
+                  />
                 ) : (
                   <MarketplaceWorker key={`hybrid-worker-${currentUser.id}-${currentUser.token}`} lang={lang} />
                 )}
@@ -338,7 +350,12 @@ export const App: React.FC = () => {
             ) : currentUser.role === 'WORKER' ? (
               <MarketplaceWorker key={`worker-${currentUser.id}-${currentUser.token}`} lang={lang} />
             ) : (
-              <MarketplaceFarmer key={`farmer-${currentUser.id}-${currentUser.token}`} lang={lang} />
+              <MarketplaceFarmer
+                key={`farmer-${currentUser.id}-${currentUser.token}`}
+                lang={lang}
+                initialJobDraft={farmerJobDraft}
+                autoOpenPostJob={Boolean(farmerJobDraft)}
+              />
             )
           ) : (
             <div
@@ -386,7 +403,16 @@ export const App: React.FC = () => {
 
         {currentTab === 'simulator' && <ProfitSimulatorScreen lang={lang} />}
 
-        {currentTab === 'farmAi' && <FarmAiHub lang={lang} />}
+        {currentTab === 'farmAi' && (
+          <FarmAiHub
+            lang={lang}
+            onHireSprayWorkers={(draft) => {
+              setFarmerJobDraft(draft);
+              setCurrentTab('marketplace');
+              setHybridSubTab('farmer');
+            }}
+          />
+        )}
 
         {currentTab === 'admin' && <AdminPortal />}
       </main>

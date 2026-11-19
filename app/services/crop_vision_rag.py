@@ -585,24 +585,24 @@ def call_crop_disease_ai(
     try:
         try:
             from ..config import settings
-            base_url = (custom_url or getattr(settings, "crop_disease_ai_url", None) or "http://127.0.0.1:8000").rstrip("/")
+            base_url = (custom_url or getattr(settings, "crop_disease_ai_url", None) or "https://cropdiseaseai-mvcq.onrender.com").rstrip("/")
         except Exception:
             import os
-            base_url = (custom_url or os.getenv("CROP_DISEASE_AI_URL", "http://127.0.0.1:8000")).rstrip("/")
+            base_url = (custom_url or os.getenv("CROP_DISEASE_AI_URL", "https://cropdiseaseai-mvcq.onrender.com")).rstrip("/")
 
         predict_url = f"{base_url}/predict/{crop_slug}"
         files = {"file": ("leaf.jpg", image_bytes, "image/jpeg")}
 
         try:
             import httpx
-            with httpx.Client(timeout=10.0) as client:
+            with httpx.Client(timeout=30.0) as client:
                 resp = client.post(predict_url, files=files)
                 if resp.status_code == 200:
                     return resp.json()
                 print(f"[CropDiseaseAI] Service returned HTTP {resp.status_code}: {resp.text[:120]}")
         except ImportError:
             import requests
-            resp = requests.post(predict_url, files=files, timeout=10.0)
+            resp = requests.post(predict_url, files=files, timeout=30.0)
             if resp.status_code == 200:
                 return resp.json()
             print(f"[CropDiseaseAI] Service returned HTTP {resp.status_code}: {resp.text[:120]}")

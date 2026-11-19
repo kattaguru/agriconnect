@@ -334,6 +334,11 @@ DISCLAIMER_DISEASE = (
 )
 
 
+@router.get("/test-version")
+def get_test_version():
+    return {"version": "1646448", "time": "2026-11-19"}
+
+
 @router.post("/disease-scan", response_model=schemas.DiseaseScanResponse)
 def scan_crop_disease(
     body: schemas.DiseaseScanRequest,
